@@ -2,18 +2,56 @@ import { Console, Lodash as _, Storage } from "@nsnanocat/util";
 import database from "../function/database.mjs";
 import setENV from "../function/setENV.mjs";
 
+const ORIGINAL_COUNTRY_HEADER = "X-iRingo-Original-Country";
+const VIRTUAL_COUNTRY = "US";
+const VIRTUAL_STOREFRONT = "143441";
+
+function getCountryFromPath(url) {
+    const locale = url.pathname.match(/^\/api\/v\d+\/(?:availability|weather)\/(?<locale>[^/]+)\//i)?.groups?.locale;
+    return locale?.match(/(?:^|-)(?<country>[A-Z]{2})$/)?.groups?.country;
+}
+
+function getRequestCountry($request, url) {
+    return url.searchParams.get("country") || $request.headers?.GeoCountryCode || $request.headers?.geocountrycode || getCountryFromPath(url);
+}
+
+function setHeader(headers, name, value) {
+    const key = Object.keys(headers).find(key => key.toLowerCase() === name.toLowerCase()) ?? name;
+    headers[key] = value;
+}
+
+function replaceLocaleCountry(url, country) {
+    url.pathname = url.pathname.replace(/^(\/api\/v\d+\/(?:availability|weather)\/[^/]*?)(?:-[A-Z]{2})?(\/)/i, (match, prefix, suffix) => `${prefix}-${country}${suffix}`);
+}
+
+function ApplyVirtualCountry($request, url) {
+    const originalCountry = getRequestCountry($request, url);
+    if (!originalCountry || originalCountry === VIRTUAL_COUNTRY) return;
+
+    const headers = ($request.headers ??= {});
+    setHeader(headers, ORIGINAL_COUNTRY_HEADER, originalCountry);
+    setHeader(headers, "GeoCountryCode", VIRTUAL_COUNTRY);
+    setHeader(headers, "geocountrycode", VIRTUAL_COUNTRY);
+
+    const storefrontKey = Object.keys(headers).find(key => key.toLowerCase() === "x-apple-store-front");
+    if (storefrontKey) headers[storefrontKey] = String(headers[storefrontKey]).replace(/^\d+/, VIRTUAL_STOREFRONT);
+    else setHeader(headers, "X-Apple-Store-Front", VIRTUAL_STOREFRONT);
+
+    url.searchParams.set("country", VIRTUAL_COUNTRY);
+    replaceLocaleCountry(url, VIRTUAL_COUNTRY);
+}
+
+function ApplyAvailabilityVirtualCountry($request, url, Settings) {
+    if (Settings?.NextHour?.Provider === "WeatherKit") return;
+
+    ApplyVirtualCountry($request, url);
+}
+
 function ApplyNextHourVirtualCountry($request, url, Settings, dataSets) {
     if (Settings?.NextHour?.Provider === "WeatherKit") return;
     if (!dataSets?.includes("forecastNextHour")) return;
 
-    const originalCountry = url.searchParams.get("country");
-    if (!originalCountry || originalCountry === "US") return;
-
-    const headers = ($request.headers ??= {});
-    headers["X-iRingo-Original-Country"] = originalCountry;
-    headers.GeoCountryCode = "US";
-    headers.geocountrycode = "US";
-    url.searchParams.set("country", "US");
+    ApplyVirtualCountry($request, url);
 }
 
 /***************** Processing *****************/
@@ -102,7 +140,11 @@ export async function Request($request) {
                 case "weatherkit.apple.com":
                     // 路径判断
                     switch (true) {
-                        case url.pathname.startsWith("/api/v2/weather/"): {
+                        case /^\/api\/v[123]\/availability\//.test(url.pathname): {
+                            ApplyAvailabilityVirtualCountry($request, url, Settings);
+                            break;
+                        }
+                        case /^\/api\/v[23]\/weather\//.test(url.pathname): {
                             // 解决 macOS 天气 app 如果使用国际版 Maps 时，country 丢失不显示未来一小时降水的问题
                             switch (true) {
                                 case $request.headers["User-Agent"]?.startsWith("WeatherKit_Weather_macOS_Version"):

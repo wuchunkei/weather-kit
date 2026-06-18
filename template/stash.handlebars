@@ -24,29 +24,36 @@ http:
   mitm:
     - "weatherkit.apple.com"
   script:
-    - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v2\/weather\/
-      name: WeatherKit.api.v2.weather.request
+    - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v[123]\/availability\/
+      name: WeatherKit.api.availability.request
       type: request
       argument:
-    - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v1\/availability\/
-      name: WeatherKit.api.v1.availability.response
+    - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v[23]\/weather\/
+      name: WeatherKit.api.weather.request
+      type: request
+      argument:
+    - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v[123]\/availability\/
+      name: WeatherKit.api.availability.response
       type: response
       require-body: true
       argument:
-    - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v2\/weather\/
-      name: WeatherKit.api.v2.weather.response
+    - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v[23]\/weather\/
+      name: WeatherKit.api.weather.response
       type: response
       require-body: true
       binary-mode: true
       argument:
 
 script-providers:
-  WeatherKit.api.v2.weather.request:
+  WeatherKit.api.availability.request:
     url: https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/request.bundle.js
     interval: 86400
-  WeatherKit.api.v1.availability.response:
+  WeatherKit.api.weather.request:
+    url: https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/request.bundle.js
+    interval: 86400
+  WeatherKit.api.availability.response:
     url: https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/response.bundle.js
     interval: 86400
-  WeatherKit.api.v2.weather.response:
+  WeatherKit.api.weather.response:
     url: https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/response.bundle.js
     interval: 86400
