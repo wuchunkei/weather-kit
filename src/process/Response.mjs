@@ -344,8 +344,14 @@ async function InjectAirQuality(airQuality, Settings, Caches, enviroments) {
         ...(needInjectComparison && comparisonMetadata?.providerName && !comparisonMetadata.temporarilyUnavailable ? [`对比昨日：\n${comparisonMetadata.providerName}`] : []),
     ];
 
-    // Step6. 选取首个有效 provider，生成统一 logo
-    const firstValidProvider = weatherKitMetadata?.providerName || pollutantMetadata?.providerName || indexMetadata?.providerName || comparisonMetadata?.providerName;
+    // Step6. 选取实际生效的 metadata，沿用注入来源自带的 logo
+    const logoMetadata = [
+        ...(needPollutants ? [pollutantMetadata] : []),
+        ...(needInjectIndex ? [indexMetadata] : []),
+        ...(needInjectComparison ? [comparisonMetadata] : []),
+        weatherKitMetadata,
+    ].find(metadata => metadata?.providerName && !metadata.temporarilyUnavailable);
+    const providerLogo = logoMetadata?.providerLogo || providerNameToLogo(logoMetadata?.providerName, "v2");
 
     // Step7. 合并输出：优先使用可用注入结果，并统一 metadata / pollutants / previousDayComparison
     airQuality = {
@@ -354,7 +360,7 @@ async function InjectAirQuality(airQuality, Settings, Caches, enviroments) {
         metadata: {
             ...(airQuality?.metadata ? airQuality.metadata : injectedPollutants?.metadata),
             providerName: providers.join("\n"),
-            ...(firstValidProvider ? { providerLogo: providerNameToLogo(firstValidProvider, "v2") } : {}),
+            ...(providerLogo ? { providerLogo } : {}),
         },
         pollutants: AirQuality.ConvertPollutants(airQuality, injectedPollutants, needInjectIndex, injectedIndex, Settings) ?? [],
         previousDayComparison: injectedComparison?.previousDayComparison ?? AirQuality.Config.CompareCategoryIndexes.UNKNOWN,
