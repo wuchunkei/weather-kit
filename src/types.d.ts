@@ -81,11 +81,13 @@ export interface Settings {
                  * @remarks
                  *
                  * Possible values:
+                 * - `'WeatherKit'` - WeatherKit（不替换）
+                 * - `'WAQI'` - WAQI
                  * - `'QWeather'` - 和风天气
                  *
-                 * @defaultValue "QWeather"
+                 * @defaultValue "WeatherKit"
                  */
-                Provider?: 'QWeather';
+                Provider?: 'WeatherKit' | 'WAQI' | 'QWeather';
             Units?: {
                 /**
                  * [今日污染物 - 单位转换] 替换目标
@@ -163,12 +165,14 @@ export interface Settings {
                  * @remarks
                  *
                  * Possible values:
+                 * - `'WeatherKit'` - WeatherKit（不替换）
                  * - `'Calculate'` - iRingo内置算法
+                 * - `'WAQI'` - WAQI
                  * - `'QWeather'` - 和风天气（国标，12年2月版）
                  *
-                 * @defaultValue "Calculate"
+                 * @defaultValue "WeatherKit"
                  */
-                Provider?: 'Calculate' | 'QWeather';
+                Provider?: 'WeatherKit' | 'Calculate' | 'WAQI' | 'QWeather';
                 /**
                  * [今日空气指数] 强制主要污染物
                  *
@@ -197,11 +201,12 @@ export interface Settings {
              * @remarks
              *
              * Possible values:
+             * - `'WeatherKit'` - WeatherKit（不替换）
              * - `'QWeather'` - 和风天气
              *
-             * @defaultValue "QWeather"
+             * @defaultValue "WeatherKit"
              */
-            PollutantsProvider?: 'QWeather';
+            PollutantsProvider?: 'WeatherKit' | 'QWeather';
             /**
              * [昨日空气指数] 数据源
              *
@@ -210,12 +215,13 @@ export interface Settings {
              * @remarks
              *
              * Possible values:
+             * - `'WeatherKit'` - WeatherKit（不替换）
              * - `'Calculate'` - iRingo内置算法
              * - `'QWeather'` - 和风天气（国标，12年2月版）
              *
-             * @defaultValue "Calculate"
+             * @defaultValue "WeatherKit"
              */
-            IndexProvider?: 'Calculate' | 'QWeather';
+            IndexProvider?: 'WeatherKit' | 'Calculate' | 'QWeather';
 };
 };
     Calculate?: {

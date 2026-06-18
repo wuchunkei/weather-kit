@@ -312,12 +312,15 @@ async function InjectAirQuality(airQuality, Settings, Caches, enviroments) {
 
     // Step2. 判断原始污染物是否为空，并在需要时注入污染物数据
     const isPollutantEmpty = !Array.isArray(airQuality?.pollutants) || airQuality.pollutants.length === 0;
-    const injectedPollutants = isPollutantEmpty ? await InjectPollutants(Settings, enviroments) : airQuality;
-    const needPollutants = isPollutantEmpty && !!(injectedPollutants?.metadata && !injectedPollutants.metadata.temporarilyUnavailable);
+    const pollutantProvider = Settings?.AirQuality?.Current?.Pollutants?.Provider ?? "QWeather";
+    const injectedPollutants = isPollutantEmpty ? await InjectPollutants(airQuality, Settings, enviroments) : airQuality;
+    const needPollutants = pollutantProvider !== "WeatherKit" && isPollutantEmpty && !!(injectedPollutants?.metadata && !injectedPollutants.metadata.temporarilyUnavailable);
 
     // Step3. 根据污染物补齐情况与替换配置，决定是否注入 AQI 指数
-    const needInjectIndex = needPollutants || Settings?.AirQuality?.Current?.Index?.Replace?.includes(AirQuality.GetNameFromScale(airQuality?.scale));
-    const injectedIndex = needInjectIndex ? await InjectIndex(injectedPollutants, Settings, enviroments) : injectedPollutants;
+    const indexProvider = Settings?.AirQuality?.Current?.Index?.Provider ?? "Calculate";
+    const indexSource = injectedPollutants ?? airQuality;
+    const needInjectIndex = indexProvider !== "WeatherKit" && (needPollutants || Settings?.AirQuality?.Current?.Index?.Replace?.includes(AirQuality.GetNameFromScale(airQuality?.scale)));
+    const injectedIndex = needInjectIndex ? await InjectIndex(indexSource, Settings, enviroments) : indexSource;
 
     // Step4. 计算昨日对比是否需要重算；若未知则注入昨日对比结果
     const weatherKitComparison = airQuality?.previousDayComparison ?? AirQuality.Config.CompareCategoryIndexes.UNKNOWN;
@@ -357,19 +360,27 @@ async function InjectAirQuality(airQuality, Settings, Caches, enviroments) {
     return airQuality;
 }
 
-async function InjectPollutants(Settings, enviroments) {
+async function InjectPollutants(airQuality, Settings, enviroments) {
     Console.info("☑️ InjectPollutants");
 
     switch (Settings?.AirQuality?.Current?.Pollutants?.Provider) {
+        case "WeatherKit": {
+            Console.info("✅ InjectPollutants");
+            return airQuality;
+        }
+        case "WAQI": {
+            const currentAirQuality = await FetchWAQIAirQuality(Settings, enviroments);
+            Console.info("✅ InjectPollutants");
+            return currentAirQuality;
+        }
         case "QWeather": {
             const currentAirQuality = await enviroments.qWeather.CurrentAirQuality();
             Console.info("✅ InjectPollutants");
             return currentAirQuality;
         }
         default: {
-            const currentAirQuality = await enviroments.qWeather.CurrentAirQuality();
             Console.info("✅ InjectPollutants");
-            return currentAirQuality;
+            return airQuality;
         }
     }
 }
@@ -386,6 +397,20 @@ function isWeatherReplaceEnabled(Settings, country) {
     });
 }
 
+async function FetchWAQIAirQuality(Settings, enviroments) {
+    if (Settings?.API?.WAQI?.Token) return await enviroments.waqi.AQI2();
+
+    const Nearest = await enviroments.waqi.Nearest();
+    const Token = await enviroments.waqi.Token(Nearest?.metadata?.stationId);
+    const aqi = await enviroments.waqi.AQI(Nearest?.metadata?.stationId, Token);
+
+    return {
+        metadata: { ...Nearest?.metadata, ...aqi?.metadata },
+        ...Nearest,
+        ...aqi,
+    };
+}
+
 /**
  * 注入空气质量数据
  * @param {any} airQuality - 空气质量数据对象
@@ -397,33 +422,33 @@ async function InjectIndex(airQuality, Settings, enviroments) {
     Console.info("☑️ InjectIndex");
 
     switch (Settings?.AirQuality?.Current?.Index?.Provider) {
+        case "WeatherKit": {
+            Console.info("✅ InjectIndex");
+            return airQuality;
+        }
         case "QWeather": {
             const currentAirQuality = await enviroments.qWeather.CurrentAirQuality(Settings.AirQuality.Current.Index.ForceCNPrimaryPollutants);
             Console.info("✅ InjectIndex");
             return currentAirQuality;
         }
-        case "Calculate":
-        default: {
+        case "WAQI": {
+            const currentAirQuality = await FetchWAQIAirQuality(Settings, enviroments);
+            Console.info("✅ InjectIndex");
+            return currentAirQuality;
+        }
+        case "Calculate": {
+            if (!Array.isArray(airQuality?.pollutants) || airQuality.pollutants.length === 0) {
+                Console.warn("InjectIndex", "No pollutants available for Calculate, keep current air quality");
+                Console.info("✅ InjectIndex");
+                return airQuality;
+            }
             const currentAirQuality = AirQuality.Pollutants2AQI(airQuality, Settings);
             Console.info("✅ InjectIndex");
             return currentAirQuality;
         }
-        // TODO
-        case "WAQI": {
-            if (Settings?.API?.WAQI?.Token) {
-                return await enviroments.waqi.AQI2();
-            } else {
-                const Nearest = await enviroments.waqi.Nearest();
-                const Token = await enviroments.waqi.Token(Nearest?.metadata?.stationId);
-                //Caches.WAQI.set(stationId, Token);
-                const aqi = await enviroments.waqi.AQI(Nearest?.metadata?.stationId, Token);
-
-                return {
-                    metadata: { ...Nearest?.metadata, ...aqi?.metadata },
-                    ...Nearest,
-                    ...aqi,
-                };
-            }
+        default: {
+            Console.info("✅ InjectIndex");
+            return airQuality;
         }
     }
 }
@@ -432,6 +457,10 @@ async function InjectComparison(airQuality, currentIndexProvider, Settings, Cach
     Console.info("☑️ InjectComparison");
 
     const { UNKNOWN } = AirQuality.Config.CompareCategoryIndexes;
+    const unavailableComparison = providerName => {
+        Console.info("✅ InjectComparison");
+        return { metadata: { providerName, temporarilyUnavailable: true }, previousDayComparison: UNKNOWN };
+    };
 
     /**
      * HJ 633—2012
@@ -539,13 +568,15 @@ async function InjectComparison(airQuality, currentIndexProvider, Settings, Cach
 
             if (algorithm !== "") {
                 switch (PollutantsProvider) {
-                    case "QWeather":
-                    default: {
+                    case "QWeather": {
                         const pollutantsToAirQuality = airQuality => AirQuality.Pollutants2AQI(airQuality, Settings, { algorithm });
                         const comparisonAirQuality = await qweatherComparison(airQuality?.categoryIndex, pollutantsToAirQuality);
                         Console.info("✅ InjectComparison");
                         return comparisonAirQuality;
                     }
+                    case "WeatherKit":
+                    default:
+                        return unavailableComparison(PollutantsProvider || "iRingo");
                 }
             }
 
@@ -557,9 +588,11 @@ async function InjectComparison(airQuality, currentIndexProvider, Settings, Cach
             Console.info("✅ InjectComparison");
             return comparisonAirQuality;
         }
+        case "WeatherKit":
+            return unavailableComparison("WeatherKit");
         default: {
             Console.error("InjectComparison", "不支持的昨日空气指数数据源");
-            return { metadata: { providerName: "iRingo", temporarilyUnavailable: true }, previousDayComparison: UNKNOWN };
+            return unavailableComparison("iRingo");
         }
     }
 }

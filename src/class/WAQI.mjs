@@ -65,6 +65,7 @@ export default class WAQI {
                                 categoryIndex: AirQuality.CategoryIndex(body?.d?.[0]?.v, "WAQI_InstantCast"),
                                 index: Number.parseInt(body?.d?.[0]?.v, 10),
                                 //"previousDayComparison": "UNKNOWN",
+                                pollutants: [],
                                 primaryPollutant: this.#Configs.Pollutants[body?.d?.[0]?.pol] || "NOT_AVAILABLE",
                                 scale: "EPA_NowCast",
                             };
@@ -97,6 +98,7 @@ export default class WAQI {
                                 categoryIndex: AirQuality.CategoryIndex(body?.data?.stations?.[0]?.aqi, "WAQI_InstantCast"),
                                 index: Number.parseInt(body?.data?.stations?.[0]?.aqi, 10),
                                 //"previousDayComparison": "UNKNOWN",
+                                pollutants: [],
                                 primaryPollutant: "NOT_AVAILABLE",
                                 scale: "EPA_NowCast",
                             };
@@ -197,6 +199,7 @@ export default class WAQI {
                                         categoryIndex: AirQuality.CategoryIndex(body?.rxs?.obs?.[0]?.msg?.aqi, "WAQI_InstantCast"),
                                         index: Number.parseInt(body?.rxs?.obs?.[0]?.msg?.aqi, 10),
                                         //"previousDayComparison": "UNKNOWN",
+                                        pollutants: [],
                                         primaryPollutant: this.#Configs.Pollutants[body?.rxs?.obs?.[0]?.msg?.dominentpol] || "NOT_AVAILABLE",
                                         scale: "EPA_NowCast",
                                     };
@@ -254,6 +257,7 @@ export default class WAQI {
                         categoryIndex: AirQuality.CategoryIndex(body?.data?.aqi, "WAQI_InstantCast"),
                         index: Number.parseInt(body?.data?.aqi, 10),
                         //"previousDayComparison": "UNKNOWN",
+                        pollutants: [],
                         primaryPollutant: this.#Configs.Pollutants[body?.data?.dominentpol] || "NOT_AVAILABLE",
                         scale: "EPA_NowCast",
                     };

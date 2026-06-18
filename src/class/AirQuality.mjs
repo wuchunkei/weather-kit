@@ -307,6 +307,7 @@ export default class AirQuality {
 
         const pollutants = injectedPollutants?.metadata && !injectedPollutants.metadata.temporarilyUnavailable ? injectedPollutants.pollutants : airQuality?.pollutants;
         Console.info("✅ ConvertPollutants");
+        if (!Array.isArray(pollutants) || pollutants.length === 0) return pollutants ?? [];
         if (replaceUnits.includes(scaleName)) {
             if (isIndexInjected && Settings?.AirQuality?.Current?.Index?.Provider === "Calculate" && unitsMode === "Scale") {
                 Console.info("ConvertPollutants", `Use pollutants from iRingo`);

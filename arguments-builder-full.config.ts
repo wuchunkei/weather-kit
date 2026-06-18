@@ -119,9 +119,13 @@ const nextHourFull = [nextHourProvider];
 const airQualityCurrentPollutantsProvider: Arg = {
     key: "AirQuality.Current.Pollutants.Provider",
     name: "[今日污染物] 数据源",
-    defaultValue: "QWeather",
+    defaultValue: "WeatherKit",
     type: "string",
-    options: [{ key: "QWeather", label: "和风天气" }],
+    options: [
+        { key: "WeatherKit", label: "WeatherKit（不替换）" },
+        { key: "WAQI", label: "WAQI" },
+        { key: "QWeather", label: "和风天气" },
+    ],
     description: "使用选定的数据源填补污染物数据。",
 };
 
@@ -187,10 +191,12 @@ const airQualityCurrentIndexReplace: Arg = {
 const airQualityCurrentIndexProvider: Arg = {
     key: "AirQuality.Current.Index.Provider",
     name: "[今日空气指数] 数据源",
-    defaultValue: "Calculate",
+    defaultValue: "WeatherKit",
     type: "string",
     options: [
+        { key: "WeatherKit", label: "WeatherKit（不替换）" },
         { key: "Calculate", label: "iRingo内置算法" },
+        { key: "WAQI", label: "WAQI" },
         { key: "QWeather", label: "和风天气（国标，12年2月版）" },
     ],
     description: "使用选定的数据源填补和替换空气质量指数。",
@@ -217,18 +223,22 @@ const airQualityComparisonReplace: Arg = {
 const airQualityComparisonYesterdayPollutantsProvider: Arg = {
     key: "AirQuality.Comparison.Yesterday.PollutantsProvider",
     name: "[昨日污染物] 数据源",
-    defaultValue: "QWeather",
+    defaultValue: "WeatherKit",
     type: "string",
-    options: [{ key: "QWeather", label: "和风天气" }],
+    options: [
+        { key: "WeatherKit", label: "WeatherKit（不替换）" },
+        { key: "QWeather", label: "和风天气" },
+    ],
     description: "为iRingo内置算法提供污染物数据，计算出昨日的空气质量指数。",
 };
 
 const airQualityComparisonYesterdayIndexProvider: Arg = {
     key: "AirQuality.Comparison.Yesterday.IndexProvider",
     name: "[昨日空气指数] 数据源",
-    defaultValue: "Calculate",
+    defaultValue: "WeatherKit",
     type: "string",
     options: [
+        { key: "WeatherKit", label: "WeatherKit（不替换）" },
         { key: "Calculate", label: "iRingo内置算法" },
         { key: "QWeather", label: "和风天气（国标，12年2月版）" },
     ],
@@ -238,6 +248,7 @@ const airQualityComparisonYesterdayIndexProvider: Arg = {
 const airQualityComparisonFull = [airQualityComparisonReplace, airQualityComparisonYesterdayPollutantsProvider, airQualityComparisonYesterdayIndexProvider];
 
 const airQualityFull = [...airQualityCurrentFull, ...airQualityComparisonFull];
+export const airQuality = [airQualityCurrentPollutantsProvider, airQualityCurrentIndexProvider, airQualityComparisonYesterdayPollutantsProvider, airQualityComparisonYesterdayIndexProvider];
 
 const calculateAlgorithm: Arg = {
     key: "AirQuality.Calculate.Algorithm",

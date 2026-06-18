@@ -5,8 +5,8 @@ export default {
             Weather: { Replace: ["CN"], Provider: "WeatherKit" },
             NextHour: { Provider: "WeatherKit" },
             AirQuality: {
-                Current: { Pollutants: { Provider: "QWeather", Units: { Replace: [], Mode: "Scale" } }, Index: { Replace: ["HJ6332012"], Provider: "Calculate", ForceCNPrimaryPollutants: true } },
-                Comparison: { ReplaceWhenCurrentChange: false, Yesterday: { PollutantsProvider: "QWeather", IndexProvider: "Calculate" } },
+                Current: { Pollutants: { Provider: "WeatherKit", Units: { Replace: [], Mode: "Scale" } }, Index: { Replace: ["HJ6332012"], Provider: "WeatherKit", ForceCNPrimaryPollutants: true } },
+                Comparison: { ReplaceWhenCurrentChange: false, Yesterday: { PollutantsProvider: "WeatherKit", IndexProvider: "WeatherKit" } },
                 Calculate: { Algorithm: "EU_EAQI", AllowOverRange: true },
             },
             API: { WAQI: { Token: null }, QWeather: { Token: null, Host: "devapi.qweather.com" }, OpenWeather: { Token: null, URL: "https://api.openweathermap.org/data/4.0/onecall" } },
