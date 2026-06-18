@@ -11,6 +11,13 @@ import IQAir from "../class/IQAir.mjs";
 import Weather from "../class/Weather.mjs";
 import AirQuality from "../class/AirQuality.mjs";
 import MatchEnum from "../class/MatchEnum.mjs";
+
+function getHeader(headers, name) {
+    const lowerName = name.toLowerCase();
+    const entry = Object.entries(headers ?? {}).find(([key]) => key.toLowerCase() === lowerName);
+    return entry?.[1];
+}
+
 /***************** Processing *****************/
 export async function Response($request, $response) {
     // 解构URL
@@ -103,6 +110,7 @@ export async function Response($request, $response) {
                                     await matchEnum.init();
                                 }
                                 const parameters = parseWeatherKitURL(url);
+                                parameters.country = getHeader($request.headers, "X-iRingo-Original-Country") ?? parameters.country;
                                 const enviroments = {
                                     openWeather: new OpenWeather(parameters, Settings?.API?.OpenWeather?.Token, Settings?.API?.OpenWeather?.URL),
                                     qWeather: new QWeather(parameters, Settings?.API?.QWeather?.Token, Settings?.API?.QWeather?.Host),

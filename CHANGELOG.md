@@ -1,3 +1,10 @@
+## 3.1.3
+
+### 🛠️ Bug Fixes
+  * 回退 3.1.2 对 `weather-map2.apple.com` 地图图层请求的 `US` 强制改写，避免 Air Quality map overlay 产生 `401`。
+  * 新增 WeatherKit 主请求的 request rewrite：当 `forecastNextHour` 被请求且 `[未来一小时降水强度]` 数据源不是 `WeatherKit` 时，临时将请求地区虚拟为 `US`，尝试触发 Weather App 的 next-hour precipitation 支持路径。
+  * WeatherKit 响应注入阶段会读取原始地区，避免 next-hour 的地区虚拟影响天气、空气质量等数据源替换判断。
+
 ## 3.1.2
 
 ### 🛠️ Bug Fixes

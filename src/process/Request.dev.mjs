@@ -2,12 +2,18 @@ import { Console, Lodash as _, Storage } from "@nsnanocat/util";
 import database from "../function/database.mjs";
 import setENV from "../function/setENV.mjs";
 
-function FixWeatherMapOverlayRequest($request, url) {
-    if (!/^\/v\d+\/mapOverlay\//.test(url.pathname)) return;
+function ApplyNextHourVirtualCountry($request, url, Settings, dataSets) {
+    if (Settings?.NextHour?.Provider === "WeatherKit") return;
+    if (!dataSets?.includes("forecastNextHour")) return;
+
+    const originalCountry = url.searchParams.get("country");
+    if (!originalCountry || originalCountry === "US") return;
+
     const headers = ($request.headers ??= {});
-    for (const name of ["GeoCountryCode", "geocountrycode", "Geo-Country-Code", "geo-country-code", "X-Geo-Country-Code", "x-geo-country-code", "X-Apple-Geo-Country-Code", "x-apple-geo-country-code"]) headers[name] = "US";
-    if (url.searchParams.has("country")) url.searchParams.set("country", "US");
-    if (url.searchParams.has("countryCode")) url.searchParams.set("countryCode", "US");
+    headers["X-iRingo-Original-Country"] = originalCountry;
+    headers.GeoCountryCode = "US";
+    headers.geocountrycode = "US";
+    url.searchParams.set("country", "US");
 }
 
 /***************** Processing *****************/
@@ -114,14 +120,11 @@ export async function Request($request) {
                                 dataSets = dataSets?.filter(dataSet => Settings.DataSets?.includes(dataSet));
                                 url.searchParams.set("dataSets", dataSets?.join(","));
                             }
+                            ApplyNextHourVirtualCountry($request, url, Settings, dataSets);
                             break;
                         }
                     }
                     break;
-                case "weather-map2.apple.com": {
-                    FixWeatherMapOverlayRequest($request, url);
-                    break;
-                }
             }
             break;
         case "CONNECT":
