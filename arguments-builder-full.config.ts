@@ -92,7 +92,7 @@ const weatherProvider: Arg = {
     description: "使用选定的数据源替换天气数据。",
 };
 
-export const weather = [weatherProvider];
+export const weather = [weatherReplace, weatherProvider];
 const weatherFull = [weatherReplace, weatherProvider];
 
 const nextHourProvider: Arg = {

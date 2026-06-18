@@ -160,7 +160,7 @@ export async function Response($request, $response) {
  */
 async function InjectCurrentWeather(currentWeather, Settings, enviroments) {
     Console.info("☑️ InjectCurrentWeather");
-    if (!Settings?.Weather?.Replace?.includes(enviroments.country)) {
+    if (!isWeatherReplaceEnabled(Settings, enviroments.country)) {
         Console.warn("InjectCurrentWeather", `Unreplaced country: ${enviroments.country}`);
         Console.info("✅ InjectCurrentWeather");
         return currentWeather;
@@ -196,7 +196,7 @@ async function InjectCurrentWeather(currentWeather, Settings, enviroments) {
  */
 async function InjectForecastDaily(forecastDaily, Settings, enviroments) {
     Console.info("☑️ InjectForecastDaily");
-    if (!Settings?.Weather?.Replace?.includes(enviroments.country)) {
+    if (!isWeatherReplaceEnabled(Settings, enviroments.country)) {
         Console.warn("InjectForecastDaily", `Unreplaced country: ${enviroments.country}`);
         Console.info("✅ InjectForecastDaily");
         return forecastDaily;
@@ -232,7 +232,7 @@ async function InjectForecastDaily(forecastDaily, Settings, enviroments) {
  */
 async function InjectForecastHourly(forecastHourly, Settings, enviroments) {
     Console.info("☑️ InjectForecastHourly");
-    if (!Settings?.Weather?.Replace?.includes(enviroments.country)) {
+    if (!isWeatherReplaceEnabled(Settings, enviroments.country)) {
         Console.warn("InjectForecastHourly", `Unreplaced country: ${enviroments.country}`);
         Console.info("✅ InjectForecastHourly");
         return forecastHourly;
@@ -372,6 +372,18 @@ async function InjectPollutants(Settings, enviroments) {
             return currentAirQuality;
         }
     }
+}
+
+function isWeatherReplaceEnabled(Settings, country) {
+    return (Settings?.Weather?.Replace ?? []).some(rule => {
+        if (!rule) return false;
+        if (rule === country) return true;
+        try {
+            return new RegExp(rule).test(country);
+        } catch {
+            return false;
+        }
+    });
 }
 
 /**
