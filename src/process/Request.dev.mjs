@@ -5,6 +5,7 @@ import setENV from "../function/setENV.mjs";
 const ORIGINAL_COUNTRY_HEADER = "X-iRingo-Original-Country";
 const VIRTUAL_COUNTRY = "US";
 const VIRTUAL_STOREFRONT = "143441";
+const CONFIGURABLE_DATASETS = database.WeatherKit.Settings.DataSets;
 
 function getCountryFromPath(url) {
     const locale = url.pathname.match(/^\/api\/v\d+\/(?:availability|weather)\/(?<locale>[^/]+)\//i)?.groups?.locale;
@@ -159,7 +160,7 @@ export async function Request($request) {
                             }
                             let dataSets = url.searchParams.get("dataSets")?.split(",");
                             if (dataSets) {
-                                dataSets = dataSets?.filter(dataSet => Settings.DataSets?.includes(dataSet));
+                                dataSets = dataSets?.filter(dataSet => !CONFIGURABLE_DATASETS.includes(dataSet) || Settings.DataSets?.includes(dataSet));
                                 url.searchParams.set("dataSets", dataSets?.join(","));
                             }
                             ApplyNextHourVirtualCountry($request, url, Settings, dataSets);

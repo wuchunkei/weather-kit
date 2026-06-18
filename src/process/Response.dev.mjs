@@ -11,11 +11,43 @@ import IQAir from "../class/IQAir.mjs";
 import Weather from "../class/Weather.mjs";
 import AirQuality from "../class/AirQuality.mjs";
 import MatchEnum from "../class/MatchEnum.mjs";
+import patchFlatBufferRootTableField from "../function/patchFlatBufferRootTableField.mjs";
 
 function getHeader(headers, name) {
     const lowerName = name.toLowerCase();
     const entry = Object.entries(headers ?? {}).find(([key]) => key.toLowerCase() === lowerName);
     return entry?.[1];
+}
+
+const WEATHER_ROOT_FIELD_IDS = {
+    airQuality: 0,
+    currentWeather: 1,
+    forecastDaily: 2,
+    forecastHourly: 3,
+    forecastNextHour: 4,
+    news: 5,
+    weatherAlerts: 6,
+    weatherChanges: 7,
+    historicalComparisons: 8,
+    locationInfo: 9,
+};
+
+function encodeDataSetRoot(dataSet, data) {
+    const Builder = new flatbuffers.Builder();
+    const WeatherData = WeatherKit2.encode(Builder, dataSet, data);
+    Builder.finish(WeatherData);
+    return Builder.asUint8Array();
+}
+
+function patchWeatherRootFields(rawBody, body, dataSets = []) {
+    let patchedBody = rawBody;
+    dataSets.forEach(dataSet => {
+        const fieldId = WEATHER_ROOT_FIELD_IDS[dataSet];
+        const data = body?.[dataSet];
+        if (fieldId === undefined || !data) return;
+        patchedBody = patchFlatBufferRootTableField(patchedBody, fieldId, encodeDataSetRoot(dataSet, data));
+    });
+    return patchedBody;
 }
 
 /***************** Processing *****************/
@@ -99,7 +131,6 @@ export async function Response($request, $response) {
                 case "application/vnd.apple.flatbuffer": {
                     // 解析FlatBuffer
                     const ByteBuffer = new flatbuffers.ByteBuffer(rawBody);
-                    const Builder = new flatbuffers.Builder();
                     // 主机判断
                     switch (url.hostname) {
                         case "weatherkit.apple.com":
@@ -189,13 +220,19 @@ export async function Response($request, $response) {
                                         }
                                     }),
                                 );
-                                const WeatherData = WeatherKit2.encode(Builder, "all", body);
-                                Builder.finish(WeatherData);
+                                try {
+                                    rawBody = patchWeatherRootFields(rawBody, body, parameters.dataSets);
+                                } catch (error) {
+                                    Console.warn("patchWeatherRootFields", error);
+                                    const Builder = new flatbuffers.Builder();
+                                    const WeatherData = WeatherKit2.encode(Builder, "all", body);
+                                    Builder.finish(WeatherData);
+                                    rawBody = Builder.asUint8Array();
+                                }
                                 break;
                             }
                             break;
                     }
-                    rawBody = Builder.asUint8Array(); // Of type `Uint8Array`.
                     break;
                 }
                 case "application/protobuf":
