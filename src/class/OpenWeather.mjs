@@ -76,11 +76,11 @@ export default class OpenWeather {
         return {};
     }
 
-    #Metadata(body, sourceType = "MODELED", reportedTime = undefined) {
+    #Metadata(body, sourceType = "MODELED", reportedTime = undefined, expireSeconds = 10 * 60) {
         const timeStamp = Math.trunc(Date.now() / 1000);
         return {
             attributionUrl: "https://openweathermap.org/",
-            expireTime: timeStamp + 10 * 60,
+            expireTime: timeStamp + expireSeconds,
             language: this.language,
             latitude: OpenWeather.#Number(body?.lat, this.latitude),
             longitude: OpenWeather.#Number(body?.lon, this.longitude),
@@ -231,7 +231,7 @@ export default class OpenWeather {
             const timeStamp = Math.trunc(Date.now() / 1000);
             const minuteStamp = new Date((body.data[0].dt ?? timeStamp) * 1000).setSeconds(0, 0) / 1000;
             forecastNextHour = {
-                metadata: this.#Metadata(body, "MODELED", body.data[0].dt),
+                metadata: this.#Metadata(body, "MODELED", body.data[0].dt, 5 * 60),
                 condition: [],
                 forecastEnd: 0,
                 forecastStart: minuteStamp,
