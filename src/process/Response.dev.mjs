@@ -166,26 +166,26 @@ function shouldPatchInjectedDataSet(dataSet, Settings, country) {
 
 /***************** Processing *****************/
 export async function Response($request, $response) {
-    // 解构URL
+    // Parse the URL.
     const url = new URL($request.url);
     Console.info(`url: ${url.toJSON()}`);
-    // 获取连接参数
+    // Read path segments.
     const PATHs = url.pathname.split("/").filter(Boolean);
     Console.info(`PATHs: ${PATHs}`);
-    // 解析格式
+    // Parse the content type.
     const FORMAT = ($response.headers?.["Content-Type"] ?? $response.headers?.["content-type"])?.split(";")?.[0];
     Console.info(`FORMAT: ${FORMAT}`);
     /**
-     * 设置
+     * Settings.
      * @type {{Settings: import('./types').Settings}}
      */
     const { Settings, Caches, Configs } = setENV("iRingo", "WeatherKit", database);
     Console.logLevel = Settings.LogLevel;
-    // 创建空数据
+    // Create an empty response body placeholder.
     let body = {};
-    // 格式判断
+    // Route by response format.
     switch (FORMAT) {
-        case undefined: // 视为无body
+        case undefined: // Treat as a response without a body.
             break;
         case "application/x-www-form-urlencoded":
         case "text/plain":
@@ -221,7 +221,7 @@ export async function Response($request, $response) {
             body = JSON.parse($response.body);
             switch (url.hostname) {
                 case "weatherkit.apple.com":
-                    // 路径判断
+                    // Route by path.
                     if (/^\/api\/v[123]\/availability\//.test(url.pathname)) {
                         Console.debug(`body: ${JSON.stringify(body)}`);
                         const version = url.pathname.match(/^\/api\/(?<version>v[123])\/availability\//)?.groups?.version;
@@ -243,12 +243,12 @@ export async function Response($request, $response) {
             //Console.debug(`isBuffer? ${ArrayBuffer.isView(rawBody)}: ${JSON.stringify(rawBody)}`);
             switch (FORMAT) {
                 case "application/vnd.apple.flatbuffer": {
-                    // 解析FlatBuffer
+                    // Decode the FlatBuffer payload.
                     const ByteBuffer = new flatbuffers.ByteBuffer(rawBody);
-                    // 主机判断
+                    // Route by host.
                     switch (url.hostname) {
                         case "weatherkit.apple.com":
-                            // 路径判断
+                            // Route by path.
                             if (/^\/api\/v[23]\/weather\//.test(url.pathname)) {
                                 body = WeatherKit2.decode(ByteBuffer, "all");
                                 const matchEnum = new MatchEnum(body);
@@ -366,7 +366,7 @@ export async function Response($request, $response) {
                 case "application/octet-stream":
                     break;
             }
-            // 写入二进制数据
+            // Write binary data back.
             $response.body = rawBody;
             break;
         }
@@ -375,11 +375,11 @@ export async function Response($request, $response) {
 }
 
 /**
- * 注入当前天气数据
- * @param {any} currentWeather - 当前天气数据对象
- * @param {import('./types').Settings} Settings - 设置对象
- * @param {any} enviroments - 环境变量
- * @returns {Promise<any>} 注入后的当前天气数据
+ * Inject current weather data.
+ * @param {any} currentWeather - Current weather object.
+ * @param {import('./types').Settings} Settings - Settings object.
+ * @param {any} enviroments - Provider instances and request context.
+ * @returns {Promise<any>} Current weather object after injection.
  */
 async function InjectCurrentWeather(currentWeather, Settings, enviroments) {
     Console.info("☑️ InjectCurrentWeather");
@@ -412,11 +412,11 @@ async function InjectCurrentWeather(currentWeather, Settings, enviroments) {
 }
 
 /**
- * 注入每日天气预报数据
- * @param {any} forecastDaily - 每日预报数据对象
- * @param {import('./types').Settings} Settings - 设置对象
- * @param {any} enviroments - 环境变量
- * @returns {Promise<any>} 注入后的每日预报数据
+ * Inject daily forecast data.
+ * @param {any} forecastDaily - Daily forecast object.
+ * @param {import('./types').Settings} Settings - Settings object.
+ * @param {any} enviroments - Provider instances and request context.
+ * @returns {Promise<any>} Daily forecast object after injection.
  */
 async function InjectForecastDaily(forecastDaily, Settings, enviroments) {
     Console.info("☑️ InjectForecastDaily");
@@ -449,11 +449,11 @@ async function InjectForecastDaily(forecastDaily, Settings, enviroments) {
 }
 
 /**
- * 注入小时天气预报数据
- * @param {any} forecastHourly - 小时预报数据对象
- * @param {import('./types').Settings} Settings - 设置对象
- * @param {any} enviroments - 环境变量
- * @returns {Promise<any>} 注入后的小时预报数据
+ * Inject hourly forecast data.
+ * @param {any} forecastHourly - Hourly forecast object.
+ * @param {import('./types').Settings} Settings - Settings object.
+ * @param {any} enviroments - Provider instances and request context.
+ * @returns {Promise<any>} Hourly forecast object after injection.
  */
 async function InjectForecastHourly(forecastHourly, Settings, enviroments) {
     Console.info("☑️ InjectForecastHourly");
@@ -486,11 +486,11 @@ async function InjectForecastHourly(forecastHourly, Settings, enviroments) {
 }
 
 /**
- * 注入下一小时天气预报数据
- * @param {any} forecastNextHour - 下一小时预报数据对象
- * @param {import('./types').Settings} Settings - 设置对象
- * @param {any} enviroments - 环境变量
- * @returns {Promise<any>} 注入后的下一小时预报数据
+ * Inject next-hour precipitation forecast data.
+ * @param {any} forecastNextHour - Next-hour forecast object.
+ * @param {import('./types').Settings} Settings - Settings object.
+ * @param {any} enviroments - Provider instances and request context.
+ * @returns {Promise<any>} Next-hour forecast object after injection.
  */
 async function InjectForecastNextHour(forecastNextHour, Settings, enviroments) {
     Console.info("☑️ InjectForecastNextHour");
@@ -526,53 +526,53 @@ async function InjectForecastNextHour(forecastNextHour, Settings, enviroments) {
 }
 
 /**
- * 注入并合并空气质量数据（污染物、指数、昨日对比）
- * @param {any} airQuality - WeatherKit 原始空气质量对象
- * @param {import('./types').Settings} Settings - 设置对象
- * @param {any} Caches - 缓存对象
- * @param {any} enviroments - 各数据源实例与定位信息
- * @returns {Promise<any>} 合并后的空气质量对象
+ * Inject and merge air-quality data, including pollutants, indexes, and yesterday comparison.
+ * @param {any} airQuality - Original WeatherKit air-quality object.
+ * @param {import('./types').Settings} Settings - Settings object.
+ * @param {any} Caches - Cache object.
+ * @param {any} enviroments - Provider instances and request context.
+ * @returns {Promise<any>} Merged air-quality object.
  */
 async function InjectAirQuality(airQuality, Settings, Caches, enviroments) {
-    // Step1. 修复污染物单位
+    // Step 1. Normalize pollutant units.
     airQuality = AirQuality.FixPollutantsUnits(airQuality);
 
-    // Step2. 判断原始污染物是否为空，并在需要时注入污染物数据
+    // Step 2. Check whether original pollutants are empty and inject them if needed.
     const isPollutantEmpty = !Array.isArray(airQuality?.pollutants) || airQuality.pollutants.length === 0;
     const pollutantProvider = Settings?.AirQuality?.Current?.Pollutants?.Provider ?? "QWeather";
     const injectedPollutants = isPollutantEmpty ? await InjectPollutants(airQuality, Settings, enviroments) : airQuality;
     const needPollutants = pollutantProvider !== "WeatherKit" && isPollutantEmpty && !!(injectedPollutants?.metadata && !injectedPollutants.metadata.temporarilyUnavailable);
 
-    // Step3. 根据污染物补齐情况与替换配置，决定是否注入 AQI 指数
+    // Step 3. Decide whether to inject AQI indexes according to pollutant availability and replacement settings.
     const indexProvider = Settings?.AirQuality?.Current?.Index?.Provider ?? "Calculate";
     const indexSource = injectedPollutants ?? airQuality;
     const isIndexUnavailable = airQuality?.metadata?.temporarilyUnavailable || !Number.isFinite(Number(airQuality?.index)) || Number(airQuality?.index) < 0;
     const needInjectIndex = indexProvider !== "WeatherKit" && (needPollutants || isIndexUnavailable || Settings?.AirQuality?.Current?.Index?.Replace?.includes(AirQuality.GetNameFromScale(airQuality?.scale)));
     const injectedIndex = needInjectIndex ? await InjectIndex(indexSource, Settings, enviroments) : indexSource;
 
-    // Step4. 计算昨日对比是否需要重算；若未知则注入昨日对比结果
+    // Step 4. Decide whether yesterday comparison should be recalculated, and inject it when unknown.
     const weatherKitComparison = airQuality?.previousDayComparison ?? AirQuality.Config.CompareCategoryIndexes.UNKNOWN;
     const previousDayComparison = needInjectIndex && Settings?.AirQuality?.Comparison?.ReplaceWhenCurrentChange ? AirQuality.Config.CompareCategoryIndexes.UNKNOWN : weatherKitComparison;
     const needInjectComparison = previousDayComparison === AirQuality.Config.CompareCategoryIndexes.UNKNOWN;
     const currentIndexProvider = needInjectIndex ? Settings?.AirQuality?.Current?.Index?.Provider : "WeatherKit";
     const injectedComparison = needInjectComparison ? await InjectComparison(injectedIndex, currentIndexProvider, Settings, Caches, enviroments) : { ...injectedIndex, previousDayComparison: weatherKitComparison };
 
-    // Step5. 收集各阶段元数据，拼接最终 providerName 展示文案
+    // Step 5. Collect metadata from each stage and build the final providerName display text.
     const weatherKitMetadata = airQuality?.metadata;
     const pollutantMetadata = injectedPollutants?.metadata;
     const indexMetadata = injectedIndex?.metadata;
     const comparisonMetadata = injectedComparison?.metadata;
     const providers = [
         ...(weatherKitMetadata?.providerName && !weatherKitMetadata.temporarilyUnavailable ? [weatherKitMetadata.providerName] : []),
-        ...(needPollutants && pollutantMetadata?.providerName && !pollutantMetadata.temporarilyUnavailable ? [`污染物：${pollutantMetadata.providerName}`] : []),
-        ...(needInjectIndex && indexMetadata?.providerName && !indexMetadata.temporarilyUnavailable ? [`指数：${AirQuality.appendScaleToProviderName(injectedIndex, Settings)}`] : []),
-        ...(needInjectComparison && comparisonMetadata?.providerName && !comparisonMetadata.temporarilyUnavailable ? [`对比昨日：\n${comparisonMetadata.providerName}`] : []),
+        ...(needPollutants && pollutantMetadata?.providerName && !pollutantMetadata.temporarilyUnavailable ? [`Pollutants: ${pollutantMetadata.providerName}`] : []),
+        ...(needInjectIndex && indexMetadata?.providerName && !indexMetadata.temporarilyUnavailable ? [`Index: ${AirQuality.appendScaleToProviderName(injectedIndex, Settings)}`] : []),
+        ...(needInjectComparison && comparisonMetadata?.providerName && !comparisonMetadata.temporarilyUnavailable ? [`Yesterday Comparison:\n${comparisonMetadata.providerName}`] : []),
     ];
 
-    // Step6. 合并 metadata，并移除 providerLogo，避免 Weather footer 尝试显示自定义图标
+    // Step 6. Merge metadata and remove providerLogo to prevent Weather from trying to render custom footer icons.
     const { providerLogo, ...metadata } = (airQuality?.metadata ? airQuality.metadata : injectedPollutants?.metadata) ?? {};
 
-    // Step7. 合并输出：优先使用可用注入结果，并统一 metadata / pollutants / previousDayComparison
+    // Step 7. Merge output, prefer available injected results, and normalize metadata / pollutants / previousDayComparison.
     airQuality = {
         ...airQuality,
         ...(injectedIndex?.metadata && !injectedIndex.metadata.temporarilyUnavailable ? injectedIndex : {}),
@@ -644,11 +644,11 @@ async function FetchWAQIAirQuality(Settings, enviroments) {
 }
 
 /**
- * 注入空气质量数据
- * @param {any} airQuality - 空气质量数据对象
- * @param {import('./types').Settings} Settings - 设置对象
- * @param {any} enviroments - 环境变量
- * @returns {Promise<any>} 注入后的空气质量数据
+ * Inject air-quality index data.
+ * @param {any} airQuality - Air-quality object.
+ * @param {import('./types').Settings} Settings - Settings object.
+ * @param {any} enviroments - Provider instances and request context.
+ * @returns {Promise<any>} Air-quality object after injection.
  */
 async function InjectIndex(airQuality, Settings, enviroments) {
     Console.info("☑️ InjectIndex");
@@ -701,7 +701,8 @@ async function InjectComparison(airQuality, currentIndexProvider, Settings, Cach
 
     /**
      * HJ 633—2012
-     * [环境空气质量指数（AQI）技术规定（试行）_中华人民共和国生态环境部]{@link https://www.mee.gov.cn/ywgz/fgbz/bz/bzwb/jcffbz/201203/t20120302_224166.shtml}
+     * Ambient Air Quality Index (AQI) Technical Regulation (Trial), Ministry of Ecology and Environment of China.
+     * @link https://www.mee.gov.cn/ywgz/fgbz/bz/bzwb/jcffbz/201203/t20120302_224166.shtml
      */
     const isHJ6332012 = (currentIndexProvider, currentScale, Settings) => {
         Console.info("☑️ isHJ6332012", `currentIndexProvider: ${currentIndexProvider}`);
@@ -743,7 +744,7 @@ async function InjectComparison(airQuality, currentIndexProvider, Settings, Cach
 
         const getMetadata = (indexProvider, temporarilyUnavailable = false) => ({
             ...yesterdayQWeather.metadata,
-            providerName: `污染物：和风天气，指数：${indexProvider}`,
+            providerName: `Pollutants: QWeather, Index: ${indexProvider}`,
             temporarilyUnavailable,
         });
 
@@ -789,7 +790,7 @@ async function InjectComparison(airQuality, currentIndexProvider, Settings, Cach
             }
         }
 
-        Console.error("qweatherComparison", `无法从和风天气获取${yesterdayQWeather.metadata.temporarilyUnavailable ? "昨日" : "今日"}空气质量数据`);
+        Console.error("qweatherComparison", `Unable to fetch ${yesterdayQWeather.metadata.temporarilyUnavailable ? "yesterday" : "current"} air-quality data from QWeather`);
         return {
             ...yesterdayQWeather,
             metadata: getMetadata(yesterdayQWeather.metadata.providerName, true),
@@ -817,7 +818,7 @@ async function InjectComparison(airQuality, currentIndexProvider, Settings, Cach
                 }
             }
 
-            Console.error("InjectComparison", "不支持今日空气质量的标准");
+            Console.error("InjectComparison", "Unsupported current air-quality standard");
             return { metadata: { providerName: "iRingo", temporarilyUnavailable: true }, previousDayComparison: UNKNOWN };
         }
         case "QWeather": {
@@ -828,7 +829,7 @@ async function InjectComparison(airQuality, currentIndexProvider, Settings, Cach
         case "WeatherKit":
             return unavailableComparison("WeatherKit");
         default: {
-            Console.error("InjectComparison", "不支持的昨日空气指数数据源");
+            Console.error("InjectComparison", "Unsupported yesterday AQI data source");
             return unavailableComparison("iRingo");
         }
     }

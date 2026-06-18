@@ -60,29 +60,29 @@ function ApplyNextHourVirtualCountry($request, url, Settings, dataSets) {
 
 /***************** Processing *****************/
 export async function Request($request) {
-    // 构造回复数据
+    // Build an optional synthetic response.
     let $response = undefined;
-    // 解构URL
+    // Parse the URL.
     const url = new URL($request.url);
     Console.info(`url: ${url.toJSON()}`);
-    // 解析格式
+    // Parse the content type.
     const FORMAT = ($request.headers?.["Content-Type"] ?? $request.headers?.["content-type"])?.split(";")?.[0];
     Console.info(`FORMAT: ${FORMAT}`);
     /**
-     * 设置
+     * Settings.
      * @type {{Settings: import('./types').Settings}}
      */
     const { Settings, Caches, Configs } = setENV("iRingo", "WeatherKit", database);
-    // 方法判断
+    // Route by HTTP method.
     switch ($request.method) {
         case "POST":
         case "PUT":
         case "PATCH":
         // biome-ignore lint/suspicious/noFallthroughSwitchClause: <explanation>
         case "DELETE":
-            // 格式判断
+            // Route by body format.
             switch (FORMAT) {
-                case undefined: // 视为无body
+                case undefined: // Treat as a request without a body.
                     break;
                 case "application/x-www-form-urlencoded":
                 case "text/plain":
@@ -127,29 +127,29 @@ export async function Request($request) {
                     //Console.debug(`$request: ${JSON.stringify($request, null, 2)}`);
                     let rawBody = $request.bodyBytes ? new Uint8Array($request.bodyBytes) : ($request.body ?? new Uint8Array());
                     //Console.debug(`isBuffer? ${ArrayBuffer.isView(rawBody)}: ${JSON.stringify(rawBody, null, 2)}`);
-                    // 写入二进制数据
+                    // Write binary data back.
                     $request.body = rawBody;
                     break;
                 }
             }
-        //break; // 不中断，继续处理URL
+        //break; // Keep processing the URL.
         case "GET":
         case "HEAD":
         case "OPTIONS":
         default:
             delete $request?.headers?.["If-None-Match"];
             delete $request?.headers?.["if-none-match"];
-            // 主机判断
+            // Route by host.
             switch (url.hostname) {
                 case "weatherkit.apple.com":
-                    // 路径判断
+                    // Route by path.
                     switch (true) {
                         case /^\/api\/v[123]\/availability\//.test(url.pathname): {
                             ApplyAvailabilityVirtualCountry($request, url, Settings);
                             break;
                         }
                         case /^\/api\/v[23]\/weather\//.test(url.pathname): {
-                            // 解决 macOS 天气 app 如果使用国际版 Maps 时，country 丢失不显示未来一小时降水的问题
+                            // Fix macOS Weather missing next-hour precipitation when country is absent with international Apple Maps.
                             switch (true) {
                                 case $request.headers["User-Agent"]?.startsWith("WeatherKit_Weather_macOS_Version"):
                                 case $request.headers["user-agent"]?.startsWith("WeatherKit_Weather_macOS_Version"):

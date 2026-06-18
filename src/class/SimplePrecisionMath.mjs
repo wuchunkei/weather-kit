@@ -1,7 +1,6 @@
-// Code by Claude
 export default class SimplePrecisionMath {
     /**
-     * 获取数字的小数位数
+     * Get the number of decimal places.
      */
     static getDecimalLength(num) {
         const str = String(num);
@@ -10,7 +9,7 @@ export default class SimplePrecisionMath {
     }
 
     /**
-     * 乘法
+     * Multiply two numbers while reducing floating-point precision noise.
      */
     static multiply(a, b, decimals = 15) {
         const numA = Number(a.toFixed(decimals));
@@ -31,11 +30,11 @@ export default class SimplePrecisionMath {
     }
 
     /**
-     * 除法
+     * Divide two numbers while reducing floating-point precision noise.
      */
     static divide(a, b, decimals = 15) {
         if (b === 0) {
-            throw new Error("除数不能为0");
+            throw new Error("Division by zero is not allowed");
         }
 
         const numA = Number(a.toFixed(decimals));
@@ -56,7 +55,7 @@ export default class SimplePrecisionMath {
     }
 
     /**
-     * 加法
+     * Add two numbers while reducing floating-point precision noise.
      */
     static add(a, b, decimals = 15) {
         const numA = Number(a.toFixed(decimals));
@@ -74,7 +73,7 @@ export default class SimplePrecisionMath {
     }
 
     /**
-     * 减法
+     * Subtract two numbers while reducing floating-point precision noise.
      */
     static subtract(a, b, decimals = 15) {
         const numA = Number(a.toFixed(decimals));

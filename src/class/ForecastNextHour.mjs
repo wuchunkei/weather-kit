@@ -18,26 +18,26 @@ export default class ForecastNextHour {
             other: "NOT_AVAILABLE",
         },
         WeatherCondition: {
-            晴朗: "CLEAR",
-            雨夹雪: "SLEET",
-            小雨: "DRIZZLE",
-            下雨: "RAIN",
-            中雨: "RAIN",
-            大雨: "HEAVY_RAIN",
-            小雪: "FLURRIES",
-            下雪: "SNOW",
-            中雪: "SNOW",
-            大雪: "HEAVY_SNOW",
-            冰雹: "HAIL",
+            "\u6674\u6717": "CLEAR",
+            "\u96e8\u5939\u96ea": "SLEET",
+            "\u5c0f\u96e8": "DRIZZLE",
+            "\u4e0b\u96e8": "RAIN",
+            "\u4e2d\u96e8": "RAIN",
+            "\u5927\u96e8": "HEAVY_RAIN",
+            "\u5c0f\u96ea": "FLURRIES",
+            "\u4e0b\u96ea": "SNOW",
+            "\u4e2d\u96ea": "SNOW",
+            "\u5927\u96ea": "HEAVY_SNOW",
+            "\u51b0\u96f9": "HAIL",
         },
         PrecipitationType: {
-            晴朗: "CLEAR",
-            雨夹雪: "SLEET",
+            "\u6674\u6717": "CLEAR",
+            "\u96e8\u5939\u96ea": "SLEET",
             rain: "RAIN",
-            雨: "RAIN",
+            "\u96e8": "RAIN",
             snow: "SNOW",
-            雪: "SNOW",
-            冰雹: "HAIL",
+            "\u96ea": "SNOW",
+            "\u51b0\u96f9": "HAIL",
         },
         Precipitation: {
             Level: {
@@ -84,7 +84,7 @@ export default class ForecastNextHour {
         return weatherCondition;
     }
 
-    // 根据描述文本猜测降水类型
+    // Infer the precipitation type from the description text.
     static PrecipitationType(sentence) {
         Console.info("☑️ PrecipitationType", `sentence: ${sentence}`);
         let precipitationType = "CLEAR";
@@ -99,12 +99,12 @@ export default class ForecastNextHour {
         Console.info("☑️ Minute");
         const precipitationType = ForecastNextHour.PrecipitationType(description);
         minutes = minutes.map((minute, i) => {
-            // 根据precipitationIntensity来猜测生成perceivedPrecipitationIntensity
+            // Infer perceivedPrecipitationIntensity from precipitationIntensity.
             minute.precipitationIntensity = Math.trunc(minute.precipitationIntensity * 1000000) / 1000000;
             minute.perceivedPrecipitationIntensity = ForecastNextHour.#ConvertPrecipitationIntensity(minute.precipitationIntensity, units);
-            // 然后根据perceivedPrecipitationIntensity和precipitationChance来猜测生成condition和summaryCondition
+            // Infer condition and summaryCondition from perceivedPrecipitationIntensity and precipitationChance.
             if (minute.perceivedPrecipitationIntensity > 2) {
-                // 大雨，强烈感知
+                // Heavy precipitation, strongly perceptible.
                 switch (precipitationType) {
                     case "RAIN":
                         minute.condition = "HEAVY_RAIN";
@@ -120,7 +120,7 @@ export default class ForecastNextHour {
                 minute.summaryCondition = precipitationType;
                 minute.clear = false;
             } else if (minute.perceivedPrecipitationIntensity > 1) {
-                // 中雨，明显感知
+                // Moderate precipitation, clearly perceptible.
                 switch (precipitationType) {
                     case "RAIN":
                         minute.condition = "RAIN";
@@ -135,8 +135,8 @@ export default class ForecastNextHour {
                 minute.summaryCondition = precipitationType;
                 minute.clear = false;
             } else if (minute.perceivedPrecipitationIntensity > 0.1) {
-                // ❓ perceivedPrecipitationIntensity 小于 0.1, 苹果天气显示为无降水
-                // 小雨，可以感知到
+                // Apple Weather displays no precipitation when perceivedPrecipitationIntensity is below 0.1.
+                // Light precipitation that can be perceived.
                 switch (precipitationType) {
                     case "RAIN":
                         minute.condition = "DRIZZLE";
@@ -151,7 +151,7 @@ export default class ForecastNextHour {
                 minute.summaryCondition = precipitationType;
                 minute.clear = false;
             } else if (minute.perceivedPrecipitationIntensity > 0) {
-                // 可能降水
+                // Possible precipitation.
                 switch (precipitationType) {
                     case "RAIN":
                         minute.condition = "POSSIBLE_DRIZZLE";
@@ -196,9 +196,9 @@ export default class ForecastNextHour {
             const minute = minutes[i];
             const previousMinute = minutes[i - 1];
             switch (i) {
-                case 0: // 第一个
+                case 0: // First item.
                     Summary.startTime = minute.startTime;
-                    Summary.condition = minute.summaryCondition; // condition 只关心降水类型，不关心具体强弱描述
+                    Summary.condition = minute.summaryCondition; // condition only tracks precipitation type, not intensity detail.
                     Summary.precipitationChance = minute.precipitationChance;
                     Summary.precipitationIntensity = minute.precipitationIntensity;
                     //Summary.beginCondition = minute.condition;
@@ -206,32 +206,32 @@ export default class ForecastNextHour {
                     Summary.maxCondition = minute.condition;
                     Summary.clear = minute.clear;
                     break;
-                case Length - 1: // 最后一个
-                    Summary.endTime = 0; // ⚠️空值必须写零！
+                case Length - 1: // Last item.
+                    Summary.endTime = 0; // Empty values must be written as zero.
                     //Summary.endCondition = minute.condition;
                     Summary.clear = minute.clear;
                     Console.debug(`Summaries[${i}]`, JSON.stringify({ ...minute, ...Summary }, null, 2));
                     Summaries.push({ ...Summary });
                     break;
-                default: // 中间
+                default: // Middle items.
                     if (minute.summaryCondition !== previousMinute.summaryCondition) {
-                        // 结束当前summary
+                        // Finish the current summary.
                         Summary.endTime = minute.startTime;
                         //Summary.endCondition = previousMinute.condition;
                         Console.debug(`Summaries[${i}]`, JSON.stringify({ ...previousMinute, ...Summary }, null, 2));
                         Summaries.push({ ...Summary });
 
-                        // 开始新的summary
+                        // Start a new summary.
                         Summary.startTime = minute.startTime;
-                        Summary.condition = minute.summaryCondition; // condition 只关心降水类型，不关心具体强弱描述
+                        Summary.condition = minute.summaryCondition; // condition only tracks precipitation type, not intensity detail.
                         Summary.precipitationChance = minute.precipitationChance;
                         Summary.precipitationIntensity = minute.precipitationIntensity;
                         //Summary.beginCondition = minute.condition;
-                        //Summary.endCondition = ""; // 重置
-                        Summary.maxCondition = minute.condition; // 重置
+                        //Summary.endCondition = ""; // Reset.
+                        Summary.maxCondition = minute.condition; // Reset.
                         Summary.clear = minute.clear;
                     } else {
-                        // 条件相同，更新最大值
+                        // Same condition; update the maximum value.
                         Summary.precipitationChance = Math.max(Summary.precipitationChance, minute.precipitationChance);
                         Summary.precipitationIntensity = Math.max(Summary.precipitationIntensity, minute.precipitationIntensity);
                         if (Summary.precipitationIntensity === minute.precipitationIntensity) Summary.maxCondition = minute.condition;
@@ -247,255 +247,255 @@ export default class ForecastNextHour {
     static Condition(summaries = []) {
         Console.info("☑️ Condition");
         const Conditions = [];
-        // 先通过 summaries 定基调
+        // Use summaries to decide the overall pattern first.
         switch (summaries.map(summary => summary.clear).join("|")) {
             case "true": {
-                // 全程 CLEAR, 无降水, 是 CLEAR
-                const CLEAR = summaries[0]; // CLEAR 时期
-                // CLEAR 期间显示为 CLEAR
+                // All CLEAR, no precipitation: CLEAR.
+                const CLEAR = summaries[0]; // CLEAR period.
+                // Show CLEAR during the CLEAR period.
                 Conditions.push({
                     beginCondition: CLEAR.maxCondition,
                     endCondition: CLEAR.maxCondition,
                     forecastToken: "CLEAR",
                     parameters: [],
                     startTime: CLEAR.startTime,
-                    endTime: 0, // CLEAR 期间
+                    endTime: 0, // CLEAR period.
                 });
                 break;
             }
             case "false": {
-                // 全程 RAIN, 有降水, 是 CONSTANT
-                const CONSTANT = summaries[0]; // CONSTANT 时期
-                // CONSTANT 期间显示为 CONSTANT
+                // All precipitation: CONSTANT.
+                const CONSTANT = summaries[0]; // CONSTANT period.
+                // Show CONSTANT during the CONSTANT period.
                 Conditions.push({
                     beginCondition: CONSTANT.maxCondition,
                     endCondition: CONSTANT.maxCondition,
                     forecastToken: "CONSTANT",
                     parameters: [],
-                    startTime: CONSTANT.startTime, // CONSTANT 期间
-                    endTime: 0, // CONSTANT 期间
+                    startTime: CONSTANT.startTime, // CONSTANT period.
+                    endTime: 0, // CONSTANT period.
                 });
                 break;
             }
             case "true|false": {
-                // 先 CLEAR 后降水, 是 START
-                const CLEAR = summaries[0]; // START 时期
-                const START = summaries[1]; // CONSTANT 时期
-                // CLEAR 期间显示为 START
+                // CLEAR followed by precipitation: START.
+                const CLEAR = summaries[0]; // START period.
+                const START = summaries[1]; // CONSTANT period.
+                // Show START during the CLEAR period.
                 Conditions.push({
                     beginCondition: START.maxCondition,
                     endCondition: START.maxCondition,
                     forecastToken: "START",
-                    parameters: [{ date: START.startTime, type: "FIRST_AT" }], // 降水开始时
-                    startTime: CLEAR.startTime, // CLEAR 期间
-                    endTime: CLEAR.endTime, // CLEAR 期间
+                    parameters: [{ date: START.startTime, type: "FIRST_AT" }], // Precipitation starts.
+                    startTime: CLEAR.startTime, // CLEAR period.
+                    endTime: CLEAR.endTime, // CLEAR period.
                 });
-                // START 期间显示为 CONSTANT
+                // Show CONSTANT during the START period.
                 Conditions.push({
                     beginCondition: START.maxCondition,
                     endCondition: START.maxCondition,
                     forecastToken: "CONSTANT",
                     parameters: [],
-                    startTime: START.startTime, // START 期间
-                    endTime: 0, // START 期间
+                    startTime: START.startTime, // START period.
+                    endTime: 0, // START period.
                 });
                 break;
             }
             case "false|true": {
-                // 先降水后 CLEAR, 是 STOP
-                const STOP = summaries[0]; // STOP 时期
-                const CLEAR = summaries[1]; // CLEAR 时期
-                // STOP 期间显示为 STOP
+                // Precipitation followed by CLEAR: STOP.
+                const STOP = summaries[0]; // STOP period.
+                const CLEAR = summaries[1]; // CLEAR period.
+                // Show STOP during the STOP period.
                 Conditions.push({
                     beginCondition: STOP.maxCondition,
                     endCondition: STOP.maxCondition,
                     forecastToken: "STOP",
-                    parameters: [{ date: STOP.endTime, type: "FIRST_AT" }], // 降水结束时
-                    startTime: STOP.startTime, // STOP 期间
-                    endTime: STOP.endTime, // STOP 期间
+                    parameters: [{ date: STOP.endTime, type: "FIRST_AT" }], // Precipitation ends.
+                    startTime: STOP.startTime, // STOP period.
+                    endTime: STOP.endTime, // STOP period.
                 });
-                // CLEAR 期间显示为 CLEAR
+                // Show CLEAR during the CLEAR period.
                 Conditions.push({
                     beginCondition: CLEAR.maxCondition,
                     endCondition: CLEAR.maxCondition,
                     forecastToken: "CLEAR",
                     parameters: [],
-                    startTime: CLEAR.startTime, // CLEAR 期间
-                    endTime: 0, // CLEAR 期间
+                    startTime: CLEAR.startTime, // CLEAR period.
+                    endTime: 0, // CLEAR period.
                 });
                 break;
             }
             case "false|true|false": {
-                // 先降水后 CLEAR, 再降水, 是 STOP_START
-                const STOP = summaries[0]; // STOP 时期
-                const CLEAR = summaries[1]; // START 时期
-                const START = summaries[2]; // START 时期
-                // STOP 期间显示为 STOP_START
+                // Precipitation, then CLEAR, then precipitation: STOP_START.
+                const STOP = summaries[0]; // STOP period.
+                const CLEAR = summaries[1]; // START period.
+                const START = summaries[2]; // START period.
+                // Show STOP_START during the STOP period.
                 Conditions.push({
-                    beginCondition: STOP.maxCondition, // 第一次降水降水开始时
-                    endCondition: START.maxCondition, // 第一次降水降水结束时
+                    beginCondition: STOP.maxCondition, // First precipitation starts.
+                    endCondition: START.maxCondition, // First precipitation ends.
                     forecastToken: "STOP_START",
                     parameters: [
-                        { date: STOP.endTime, type: "FIRST_AT" }, // 第一次降水结束时
-                        { date: START.startTime, type: "SECOND_AT" }, // 第二次降水开始时
+                        { date: STOP.endTime, type: "FIRST_AT" }, // First precipitation ends.
+                        { date: START.startTime, type: "SECOND_AT" }, // Second precipitation starts.
                     ],
-                    startTime: STOP.startTime, // STOP 期间
-                    endTime: STOP.endTime, // STOP 期间
+                    startTime: STOP.startTime, // STOP period.
+                    endTime: STOP.endTime, // STOP period.
                 });
-                // CLEAR 期间显示为 START
+                // Show START during the CLEAR period.
                 Conditions.push({
                     beginCondition: START.maxCondition,
                     endCondition: START.maxCondition,
                     forecastToken: "START",
                     parameters: [{ date: START.startTime, type: "FIRST_AT" }],
-                    startTime: CLEAR.startTime, // CLEAR 期间
-                    endTime: CLEAR.endTime, // CLEAR 期间
+                    startTime: CLEAR.startTime, // CLEAR period.
+                    endTime: CLEAR.endTime, // CLEAR period.
                 });
-                // START 期间显示为 CONSTANT
+                // Show CONSTANT during the START period.
                 Conditions.push({
                     beginCondition: START.maxCondition,
                     endCondition: START.maxCondition,
                     forecastToken: "CONSTANT",
                     parameters: [],
-                    startTime: START.startTime, // START 期间
-                    endTime: 0, // START 期间
+                    startTime: START.startTime, // START period.
+                    endTime: 0, // START period.
                 });
                 break;
             }
             case "true|false|true": {
-                // 先 CLEAR 后降水, 再 CLEAR, 是 START_STOP
-                const CLEAR1 = summaries[0]; // START_STOP 时期
-                const STOP = summaries[1]; // STOP 时期
-                const CLEAR2 = summaries[2]; // CLEAR 时期
-                // CLEAR1 期间显示为 START_STOP
+                // CLEAR, then precipitation, then CLEAR: START_STOP.
+                const CLEAR1 = summaries[0]; // START_STOP period.
+                const STOP = summaries[1]; // STOP period.
+                const CLEAR2 = summaries[2]; // CLEAR period.
+                // Show START_STOP during the CLEAR1 period.
                 Conditions.push({
-                    beginCondition: STOP.maxCondition, // STOP 的开始天气
-                    endCondition: STOP.maxCondition, // STOP 的结束天气
+                    beginCondition: STOP.maxCondition, // START condition for STOP.
+                    endCondition: STOP.maxCondition, // END condition for STOP.
                     forecastToken: "START_STOP",
                     parameters: [
                         { date: STOP.startTime, type: "FIRST_AT" },
                         { date: STOP.endTime, type: "SECOND_AT" },
                     ],
-                    startTime: CLEAR1.startTime, // CLEAR1 期间
-                    endTime: CLEAR1.endTime, // CLEAR1 期间
+                    startTime: CLEAR1.startTime, // CLEAR1 period.
+                    endTime: CLEAR1.endTime, // CLEAR1 period.
                 });
-                // STOP 期间显示为 STOP
+                // Show STOP during the STOP period.
                 Conditions.push({
-                    beginCondition: STOP.maxCondition, // STOP 的开始天气
-                    endCondition: STOP.maxCondition, // STOP 的结束天气
+                    beginCondition: STOP.maxCondition, // START condition for STOP.
+                    endCondition: STOP.maxCondition, // END condition for STOP.
                     forecastToken: "STOP",
                     parameters: [{ date: STOP.endTime, type: "FIRST_AT" }],
-                    startTime: STOP.startTime, // STOP 期间
-                    endTime: STOP.endTime, // STOP 期间
+                    startTime: STOP.startTime, // STOP period.
+                    endTime: STOP.endTime, // STOP period.
                 });
-                // CLEAR2 期间显示为 CLEAR
+                // Show CLEAR during the CLEAR2 period.
                 Conditions.push({
-                    beginCondition: CLEAR2.maxCondition, // CLEAR2 时期
-                    endCondition: CLEAR2.maxCondition, // CLEAR2 时期
+                    beginCondition: CLEAR2.maxCondition, // CLEAR2 period.
+                    endCondition: CLEAR2.maxCondition, // CLEAR2 period.
                     forecastToken: "CLEAR",
                     parameters: [],
-                    startTime: CLEAR2.startTime, // CLEAR2 期间
-                    endTime: 0, // CLEAR2 期间
+                    startTime: CLEAR2.startTime, // CLEAR2 period.
+                    endTime: 0, // CLEAR2 period.
                 });
                 break;
             }
             case "false|true|false|true": {
-                // 先降水后 CLEAR, 再降水再 CLEAR, 是 STOP_START + START_STOP
-                const STOP1 = summaries[0]; // STOP 时期 1
-                const CLEAR1 = summaries[1]; // CLEAR 时期 1
-                const STOP2 = summaries[2]; // STOP 时期 2
-                const CLEAR2 = summaries[3]; // CLEAR 时期 2
-                // STOP1 期间显示为 STOP_START
+                // Precipitation, CLEAR, precipitation, then CLEAR: STOP_START + START_STOP.
+                const STOP1 = summaries[0]; // STOP period 1.
+                const CLEAR1 = summaries[1]; // CLEAR period 1.
+                const STOP2 = summaries[2]; // STOP period 2.
+                const CLEAR2 = summaries[3]; // CLEAR period 2.
+                // Show STOP_START during the STOP1 period.
                 Conditions.push({
-                    beginCondition: STOP1.maxCondition, // STOP1 的开始天气
-                    endCondition: STOP2.maxCondition, // STOP2 的开始天气
+                    beginCondition: STOP1.maxCondition, // START condition for STOP1.
+                    endCondition: STOP2.maxCondition, // START condition for STOP2.
                     forecastToken: "STOP_START",
                     parameters: [
-                        { date: STOP1.endTime, type: "FIRST_AT" }, // STOP1 结束
-                        { date: STOP2.startTime, type: "SECOND_AT" }, // STOP2 开始
+                        { date: STOP1.endTime, type: "FIRST_AT" }, // STOP1 ends.
+                        { date: STOP2.startTime, type: "SECOND_AT" }, // STOP2 starts.
                     ],
-                    startTime: STOP1.startTime, // STOP1 期间
-                    endTime: STOP1.endTime, // STOP1 期间
+                    startTime: STOP1.startTime, // STOP1 period.
+                    endTime: STOP1.endTime, // STOP1 period.
                 });
-                // CLEAR1 期间显示为 START_STOP
+                // Show START_STOP during the CLEAR1 period.
                 Conditions.push({
-                    beginCondition: STOP2.maxCondition, // STOP 时期 2
-                    endCondition: STOP2.maxCondition, // STOP 时期 2
+                    beginCondition: STOP2.maxCondition, // STOP period 2.
+                    endCondition: STOP2.maxCondition, // STOP period 2.
                     forecastToken: "START_STOP",
                     parameters: [
-                        { date: STOP2.startTime, type: "FIRST_AT" }, // STOP2 开始
-                        { date: STOP2.endTime, type: "SECOND_AT" }, // STOP2 结束
+                        { date: STOP2.startTime, type: "FIRST_AT" }, // STOP2 starts.
+                        { date: STOP2.endTime, type: "SECOND_AT" }, // STOP2 ends.
                     ],
-                    startTime: CLEAR1.startTime, // CLEAR1 期间
-                    endTime: CLEAR1.endTime, // CLEAR1 期间
+                    startTime: CLEAR1.startTime, // CLEAR1 period.
+                    endTime: CLEAR1.endTime, // CLEAR1 period.
                 });
-                // STOP2 期间显示为 STOP
+                // Show STOP during the STOP2 period.
                 Conditions.push({
-                    beginCondition: STOP2.maxCondition, // STOP 时期
-                    endCondition: STOP2.maxCondition, // STOP 时期
+                    beginCondition: STOP2.maxCondition, // STOP period.
+                    endCondition: STOP2.maxCondition, // STOP period.
                     forecastToken: "STOP",
                     parameters: [{ date: STOP2.endTime, type: "FIRST_AT" }],
-                    startTime: STOP2.startTime, // STOP2 期间
-                    endTime: STOP2.endTime, // STOP2 期间
+                    startTime: STOP2.startTime, // STOP2 period.
+                    endTime: STOP2.endTime, // STOP2 period.
                 });
-                // CLEAR2 期间显示为 CLEAR
+                // Show CLEAR during the CLEAR2 period.
                 Conditions.push({
-                    beginCondition: CLEAR2.maxCondition, // CLEAR 时期
-                    endCondition: CLEAR2.maxCondition, // CLEAR 时期
+                    beginCondition: CLEAR2.maxCondition, // CLEAR period.
+                    endCondition: CLEAR2.maxCondition, // CLEAR period.
                     forecastToken: "CLEAR",
                     parameters: [],
-                    startTime: CLEAR2.startTime, // CLEAR2 期间
-                    endTime: 0, // CLEAR2 期间
+                    startTime: CLEAR2.startTime, // CLEAR2 period.
+                    endTime: 0, // CLEAR2 period.
                 });
                 break;
             }
             case "true|false|true|false": {
-                // 先 CLEAR 后降水, 再 CLEAR 再降水, 是 START_STOP + STOP_START
-                const CLEAR1 = summaries[0]; // CLEAR1 时期
-                const START1 = summaries[1]; // START1 时期
-                const CLEAR2 = summaries[2]; // CLEAR2 时期
-                const START2 = summaries[3]; // START2 时期
-                // CLEAR1 期间显示为 START_STOP
+                // CLEAR, precipitation, CLEAR, then precipitation: START_STOP + STOP_START.
+                const CLEAR1 = summaries[0]; // CLEAR1 period.
+                const START1 = summaries[1]; // START1 period.
+                const CLEAR2 = summaries[2]; // CLEAR2 period.
+                const START2 = summaries[3]; // START2 period.
+                // Show START_STOP during the CLEAR1 period.
                 Conditions.push({
-                    beginCondition: START1.maxCondition, // START1 的开始天气
-                    endCondition: START1.maxCondition, // START1 的结束天气
+                    beginCondition: START1.maxCondition, // START condition for START1.
+                    endCondition: START1.maxCondition, // END condition for START1.
                     forecastToken: "START_STOP",
                     parameters: [
-                        { date: START1.startTime, type: "FIRST_AT" }, // CLEAR1 结束
-                        { date: START1.endTime, type: "SECOND_AT" }, // CLEAR2 开始
+                        { date: START1.startTime, type: "FIRST_AT" }, // CLEAR1 ends.
+                        { date: START1.endTime, type: "SECOND_AT" }, // CLEAR2 starts.
                     ],
-                    startTime: CLEAR1.startTime, // CLEAR1 期间
-                    endTime: CLEAR1.endTime, // CLEAR1 期间
+                    startTime: CLEAR1.startTime, // CLEAR1 period.
+                    endTime: CLEAR1.endTime, // CLEAR1 period.
                 });
-                // START1 期间显示为 STOP_START
+                // Show STOP_START during the START1 period.
                 Conditions.push({
-                    beginCondition: START1.maxCondition, // START1 的结束天气
-                    endCondition: START2.maxCondition, // START2 的开始天气
+                    beginCondition: START1.maxCondition, // END condition for START1.
+                    endCondition: START2.maxCondition, // START condition for START2.
                     forecastToken: "STOP_START",
                     parameters: [
-                        { date: START1.endTime, type: "FIRST_AT" }, // START1 结束
-                        { date: START2.startTime, type: "SECOND_AT" }, // START2 开始
+                        { date: START1.endTime, type: "FIRST_AT" }, // START1 ends.
+                        { date: START2.startTime, type: "SECOND_AT" }, // START2 starts.
                     ],
-                    startTime: START1.startTime, // START1 期间
-                    endTime: START1.endTime, // START1 期间
+                    startTime: START1.startTime, // START1 period.
+                    endTime: START1.endTime, // START1 period.
                 });
-                // CLEAR2 期间显示为 START
+                // Show START during the CLEAR2 period.
                 Conditions.push({
-                    beginCondition: START2.maxCondition, // START2.beginCondition, // START2 的开始天气
-                    endCondition: START2.maxCondition, // START2 的开始天气
+                    beginCondition: START2.maxCondition, // START2.beginCondition; START condition for START2.
+                    endCondition: START2.maxCondition, // START condition for START2.
                     forecastToken: "START",
                     parameters: [{ date: START2.startTime, type: "FIRST_AT" }],
-                    startTime: CLEAR2.startTime, // CLEAR2 期间
-                    endTime: CLEAR2.endTime, // CLEAR2 期间
+                    startTime: CLEAR2.startTime, // CLEAR2 period.
+                    endTime: CLEAR2.endTime, // CLEAR2 period.
                 });
-                // START2 期间显示为 CONSTANT
+                // Show CONSTANT during the START2 period.
                 Conditions.push({
-                    beginCondition: START2.maxCondition, // START2 时期
-                    endCondition: START2.maxCondition, // START2 时期
+                    beginCondition: START2.maxCondition, // START2 period.
+                    endCondition: START2.maxCondition, // START2 period.
                     forecastToken: "CONSTANT",
                     parameters: [],
-                    startTime: START2.startTime, // START2 期间
-                    endTime: 0, // START2 期间
+                    startTime: START2.startTime, // START2 period.
+                    endTime: 0, // START2 period.
                 });
                 break;
             }
@@ -512,26 +512,26 @@ export default class ForecastNextHour {
         let perceivedPrecipitationIntensity = 0;
 
         if (precipitationIntensity === 0) {
-            // 无降水
+            // No precipitation.
             perceivedPrecipitationIntensity = 0;
         } else if (precipitationIntensity > Range.NO[0] && precipitationIntensity <= Range.NO[1]) {
-            // 轻微降水，可能感知不到
-            perceivedPrecipitationIntensity = 0; // 轻微降水通常感知不到
+            // Very light precipitation, usually not perceptible.
+            perceivedPrecipitationIntensity = 0; // Very light precipitation is usually not perceptible.
         } else if (precipitationIntensity > Range.LIGHT[0] && precipitationIntensity <= Range.LIGHT[1]) {
-            // 小雨，可以感知到
-            // 根据强度计算感知强度，在0-1之间
+            // Light precipitation, perceptible.
+            // Calculate perceived intensity in the 0-1 range.
             perceivedPrecipitationIntensity = Math.min(1, (precipitationIntensity - Range.LIGHT[0]) / (Range.LIGHT[1] - Range.LIGHT[0]));
         } else if (precipitationIntensity > Range.MODERATE[0] && precipitationIntensity <= Range.MODERATE[1]) {
-            // 中雨，明显感知
-            // 根据强度计算感知强度，在1-2之间
+            // Moderate precipitation, clearly perceptible.
+            // Calculate perceived intensity in the 1-2 range.
             perceivedPrecipitationIntensity = 1 + Math.min(1, (precipitationIntensity - Range.MODERATE[0]) / (Range.MODERATE[1] - Range.MODERATE[0]));
         } else if (precipitationIntensity > Range.HEAVY[0]) {
-            // 大雨，强烈感知
-            // 根据强度计算感知强度，在2-3之间
+            // Heavy precipitation, strongly perceptible.
+            // Calculate perceived intensity in the 2-3 range.
             perceivedPrecipitationIntensity = 2 + Math.min(1, (precipitationIntensity - Range.HEAVY[0]) / (Range.HEAVY[1] - Range.HEAVY[0]));
         }
 
-        // 使用Math.trunc保留一位小数（性能最快，截断不四舍五入）
+        // Use Math.trunc to keep three decimal places; this truncates instead of rounding.
         perceivedPrecipitationIntensity = Math.trunc(perceivedPrecipitationIntensity * 1000) / 1000;
 
         //Console.debug(`perceivedPrecipitationIntensity: ${perceivedPrecipitationIntensity}`);

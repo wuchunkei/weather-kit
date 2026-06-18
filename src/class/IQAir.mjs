@@ -70,7 +70,7 @@ export default class IQAir {
 
         const [longitude, latitude] = data?.location?.coordinates ?? [];
         const stationName = data?.name || data?.city;
-        const providerName = ["IQAir", stationName ? `监测站：${stationName}` : undefined, data?.city ? `城市：${data.city}` : undefined].filter(Boolean).join("\n");
+        const providerName = ["IQAir", stationName ? `Station: ${stationName}` : undefined, data?.city ? `City: ${data.city}` : undefined].filter(Boolean).join("\n");
 
         return {
             metadata: {

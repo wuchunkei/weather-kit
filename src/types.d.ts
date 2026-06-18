@@ -1,53 +1,53 @@
 export interface Settings {
     /**
-     * [数据集]
+     * [Data Sets]
      *
-     * 选中的数据集会被包含在请求中。
+     * Selected data sets will be included in WeatherKit requests.
      *
      * @remarks
      *
      * Possible values:
-     * - `'airQuality'` - 空气质量
-     * - `'currentWeather'` - 当前天气
-     * - `'forecastDaily'` - 每日预报
-     * - `'forecastHourly'` - 每小时预报
-     * - `'forecastNextHour'` - 未来一小时降水强度
-     * - `'locationInfo'` - 位置信息
-     * - `'news'` - 新闻
-     * - `'historicalComparisons'` - 历史对比
-     * - `'weatherAlerts'` - 天气预警
-     * - `'weatherChanges'` - 天气变化
+     * - `'airQuality'` - Air Quality
+     * - `'currentWeather'` - Current Weather
+     * - `'forecastDaily'` - Daily Forecast
+     * - `'forecastHourly'` - Hourly Forecast
+     * - `'forecastNextHour'` - Next-Hour Precipitation Intensity
+     * - `'locationInfo'` - Location Info
+     * - `'news'` - News
+     * - `'historicalComparisons'` - Historical Comparisons
+     * - `'weatherAlerts'` - Weather Alerts
+     * - `'weatherChanges'` - Weather Changes
      *
      * @defaultValue ["airQuality","currentWeather","forecastDaily","forecastHourly","forecastNextHour","locationInfo","news","historicalComparisons","weatherAlerts","weatherChanges"]
      */
     DataSets?: ('airQuality' | 'currentWeather' | 'forecastDaily' | 'forecastHourly' | 'forecastNextHour' | 'locationInfo' | 'news' | 'historicalComparisons' | 'weatherAlerts' | 'weatherChanges')[];
     Weather?: {
     /**
-         * [天气] 替换范围
+         * [Weather] Replacement Scope
          *
-         * 只替换指定地区的天气。
+         * Replace weather data only for matching regions.
          *
          * @remarks
          *
          * Possible values:
-         * - `'CN'` - 中国大陆
-         * - `'CN|HK|MO|TW'` - 中国大陆、港澳台
-         * - `'.*'` - 全部地区
+         * - `'CN'` - Mainland China
+         * - `'CN|HK|MO|TW'` - Mainland China, Hong Kong, Macau, and Taiwan
+         * - `'.*'` - All Regions
          *
          * @defaultValue "CN"
          */
         Replace?: 'CN' | 'CN|HK|MO|TW' | '.*';
     /**
-         * [天气] 数据源
+         * [Weather] Data Source
          *
-         * 使用选定的数据源替换天气数据。
+         * Use the selected provider to replace weather data.
          *
          * @remarks
          *
          * Possible values:
-         * - `'WeatherKit'` - WeatherKit（不替换）
+         * - `'WeatherKit'` - WeatherKit (No replacement)
          * - `'OpenWeather'` - OpenWeather
-         * - `'QWeather'` - 和风天气
+         * - `'QWeather'` - QWeather
          *
          * @defaultValue "WeatherKit"
          */
@@ -55,16 +55,16 @@ export interface Settings {
 };
     NextHour?: {
     /**
-         * [未来一小时降水强度] 数据源
+         * [Next-Hour Precipitation Intensity] Data Source
          *
-         * 使用选定的数据源替换或填充未来一小时降水强度的数据。
+         * Use the selected provider to replace or fill next-hour precipitation intensity data.
          *
          * @remarks
          *
          * Possible values:
-         * - `'WeatherKit'` - WeatherKit（不添加）
+         * - `'WeatherKit'` - WeatherKit (Do not add)
          * - `'OpenWeather'` - OpenWeather
-         * - `'QWeather'` - 和风天气
+         * - `'QWeather'` - QWeather
          *
          * @defaultValue "WeatherKit"
          */
@@ -74,53 +74,53 @@ export interface Settings {
     Current?: {
             Pollutants?: {
             /**
-                 * [今日污染物] 数据源
+                 * [Current Pollutants] Data Source
                  *
-                 * 使用选定的数据源填补污染物数据。IQAir 免费方案通常只返回 AQI，污染物浓度需要对应 API 方案支持。
+                 * Use the selected provider to fill pollutant data. IQAir free plans usually return AQI only; pollutant concentrations require a matching API plan.
                  *
                  * @remarks
                  *
                  * Possible values:
-                 * - `'WeatherKit'` - WeatherKit（不替换）
+                 * - `'WeatherKit'` - WeatherKit (No replacement)
                  * - `'WAQI'` - WAQI
                  * - `'IQAir'` - IQAir
-                 * - `'QWeather'` - 和风天气
+                 * - `'QWeather'` - QWeather
                  *
                  * @defaultValue "WeatherKit"
                  */
                 Provider?: 'WeatherKit' | 'WAQI' | 'IQAir' | 'QWeather';
             Units?: {
                 /**
-                 * [今日污染物 - 单位转换] 替换目标
+                 * [Current Pollutants - Unit Conversion] Targets
                  *
-                 * 转换污染物的单位，方便与空气质量标准比对。单位转换会产生小数，有略微精度损失，且小数部分可能会被省略。
+                 * Convert pollutant units for comparison with air-quality standards. Unit conversion can introduce decimals, minor precision loss, and omitted decimal parts.
                  *
                  * @remarks
                  *
                  * Possible values:
-                 * - `'EPA_NowCast'` - 美国AQI（EPA_NowCast）
-                 * - `'EU.EAQI'` - 欧盟EAQI（EU.EAQI）
-                 * - `'HJ6332012'` - 中国AQI（HJ6332012）
-                 * - `'UBA'` - 德国LQI（UBA）
+                 * - `'EPA_NowCast'` - US AQI (EPA_NowCast)
+                 * - `'EU.EAQI'` - EU EAQI (EU.EAQI)
+                 * - `'HJ6332012'` - China AQI (HJ6332012)
+                 * - `'UBA'` - Germany LQI (UBA)
                  *
                  * @defaultValue []
                  */
                 Replace?: ('EPA_NowCast' | 'EU.EAQI' | 'HJ6332012' | 'UBA')[];
                 /**
-                 * [今日污染物 - 单位转换] 模式
+                 * [Current Pollutants - Unit Conversion] Mode
                  *
-                 * 污染物单位的转换目标。
+                 * Target unit conversion mode for pollutants.
                  *
                  * @remarks
                  *
                  * Possible values:
-                 * - `'Scale'` - 与空气质量标准的要求相同
-                 * - `'ugm3'` - 除非标准要求，都转为µg/m³
-                 * - `'EU_ppb'` - 除非标准要求，都转为欧盟ppb
-                 * - `'US_ppb'` - 除非标准要求，都转为美标ppb
-                 * - `'Force_ugm3'` - µg/m³
-                 * - `'Force_EU_ppb'` - 欧盟ppb
-                 * - `'Force_US_ppb'` - 美标ppb
+                 * - `'Scale'` - Match the air-quality standard
+                 * - `'ugm3'` - Convert to ug/m3 unless the standard requires another unit
+                 * - `'EU_ppb'` - Convert to EU ppb unless the standard requires another unit
+                 * - `'US_ppb'` - Convert to US ppb unless the standard requires another unit
+                 * - `'Force_ugm3'` - ug/m3
+                 * - `'Force_EU_ppb'` - EU ppb
+                 * - `'Force_US_ppb'` - US ppb
                  *
                  * @defaultValue "Scale"
                  */
@@ -129,56 +129,56 @@ export interface Settings {
 };
             Index?: {
                 /**
-                 * [今日空气指数] 替换目标
+                 * [Current AQI] Replacement Targets
                  *
-                 * 替换指定标准的空气质量指数。
+                 * Replace air-quality indexes for the selected standards.
                  *
                  * @remarks
                  *
                  * Possible values:
-                 * - `'HJ6332012'` - 中国AQI（HJ6332012）
-                 * - `'IE.AQIH'` - 爱尔兰AQIH（IE.AQIH）
-                 * - `'AT.AQI'` - 奥地利AQI（AT.AQI）
-                 * - `'BE.BelAQI'` - 比利时BelAQI（BE.BelAQI）
-                 * - `'UBA'` - 德国LQI（UBA）
-                 * - `'FR.ATMO'` - 法国IQA（FR.ATMO）
-                 * - `'KR.CAI'` - 韩国CAI（KR.CAI）
-                 * - `'CA.AQHI'` - 加拿大AQHI（CA.AQHI）
-                 * - `'CZ.AQI'` - 捷克AQI（CZ.AQI）
-                 * - `'NL.LKI'` - 荷兰LKI（NL.LKI）
-                 * - `'EPA_NowCast'` - 美国AQI（EPA_NowCast）
-                 * - `'ICARS'` - 墨西哥ICARS（ICARS）
-                 * - `'EU.EAQI'` - 欧盟EAQI（EU.EAQI）
-                 * - `'CH.KBI'` - 瑞士KBI（CH.KBI）
-                 * - `'ES.MITECO'` - 西班牙ICA（ES.MITECO）
-                 * - `'SG.NEA'` - 新加坡PSI（SG.NEA）
-                 * - `'NAQI'` - 印度NAQI（NAQI）
-                 * - `'DAQI'` - 英国DAQI（DAQI）
+                 * - `'HJ6332012'` - China AQI (HJ6332012)
+                 * - `'IE.AQIH'` - Ireland AQIH (IE.AQIH)
+                 * - `'AT.AQI'` - Austria AQI (AT.AQI)
+                 * - `'BE.BelAQI'` - Belgium BelAQI (BE.BelAQI)
+                 * - `'UBA'` - Germany LQI (UBA)
+                 * - `'FR.ATMO'` - France IQA (FR.ATMO)
+                 * - `'KR.CAI'` - Korea CAI (KR.CAI)
+                 * - `'CA.AQHI'` - Canada AQHI (CA.AQHI)
+                 * - `'CZ.AQI'` - Czech AQI (CZ.AQI)
+                 * - `'NL.LKI'` - Netherlands LKI (NL.LKI)
+                 * - `'EPA_NowCast'` - US AQI (EPA_NowCast)
+                 * - `'ICARS'` - Mexico ICARS (ICARS)
+                 * - `'EU.EAQI'` - EU EAQI (EU.EAQI)
+                 * - `'CH.KBI'` - Switzerland KBI (CH.KBI)
+                 * - `'ES.MITECO'` - Spain ICA (ES.MITECO)
+                 * - `'SG.NEA'` - Singapore PSI (SG.NEA)
+                 * - `'NAQI'` - India NAQI (NAQI)
+                 * - `'DAQI'` - UK DAQI (DAQI)
                  *
                  * @defaultValue ["HJ6332012"]
                  */
                 Replace?: ('HJ6332012' | 'IE.AQIH' | 'AT.AQI' | 'BE.BelAQI' | 'UBA' | 'FR.ATMO' | 'KR.CAI' | 'CA.AQHI' | 'CZ.AQI' | 'NL.LKI' | 'EPA_NowCast' | 'ICARS' | 'EU.EAQI' | 'CH.KBI' | 'ES.MITECO' | 'SG.NEA' | 'NAQI' | 'DAQI')[];
                 /**
-                 * [今日空气指数] 数据源
+                 * [Current AQI] Data Source
                  *
-                 * 使用选定的数据源填补和替换空气质量指数。
+                 * Use the selected provider to fill and replace AQI data.
                  *
                  * @remarks
                  *
                  * Possible values:
-                 * - `'WeatherKit'` - WeatherKit（不替换）
-                 * - `'Calculate'` - iRingo内置算法
+                 * - `'WeatherKit'` - WeatherKit (No replacement)
+                 * - `'Calculate'` - iRingo Built-in Algorithm
                  * - `'WAQI'` - WAQI
-                 * - `'IQAir'` - IQAir（美标 EPA）
-                 * - `'QWeather'` - 和风天气（国标，12年2月版）
+                 * - `'IQAir'` - IQAir (US EPA)
+                 * - `'QWeather'` - QWeather (China AQI, 2012-02 edition)
                  *
                  * @defaultValue "WeatherKit"
                  */
                 Provider?: 'WeatherKit' | 'Calculate' | 'WAQI' | 'IQAir' | 'QWeather';
                 /**
-                 * [今日空气指数] 强制主要污染物
+                 * [Current AQI] Force Primary Pollutant
                  *
-                 * 忽略国标（HJ 633—2012）的AQI > 50规定，始终将IAQI最大的空气污染物作为主要污染物。
+                 * Ignore the HJ 633-2012 AQI > 50 rule and always use the pollutant with the highest IAQI as the primary pollutant.
                  *
                  * @defaultValue true
                  */
@@ -187,39 +187,39 @@ export interface Settings {
 };
     Comparison?: {
         /**
-         * [空气质量 - 对比昨日] 变化时替换
+         * [Air Quality - Yesterday Comparison] Replace on Current Change
          *
-         * 即使已有对比昨日数据，当今日空气质量指数发生变化时，替换对比昨日数据。
+         * Replace yesterday comparison data when today's AQI changes, even if comparison data already exists.
          *
          * @defaultValue false
          */
         ReplaceWhenCurrentChange?: boolean;
         Yesterday?: {
             /**
-             * [昨日污染物] 数据源
+             * [Yesterday Pollutants] Data Source
              *
-             * 为iRingo内置算法提供污染物数据，计算出昨日的空气质量指数。
+             * Provide pollutant data for the iRingo built-in algorithm to calculate yesterday's AQI.
              *
              * @remarks
              *
              * Possible values:
-             * - `'WeatherKit'` - WeatherKit（不替换）
-             * - `'QWeather'` - 和风天气
+             * - `'WeatherKit'` - WeatherKit (No replacement)
+             * - `'QWeather'` - QWeather
              *
              * @defaultValue "WeatherKit"
              */
             PollutantsProvider?: 'WeatherKit' | 'QWeather';
             /**
-             * [昨日空气指数] 数据源
+             * [Yesterday AQI] Data Source
              *
-             * 用来和今日空气质量指数对比的数据。
+             * Data source used to compare with today's AQI.
              *
              * @remarks
              *
              * Possible values:
-             * - `'WeatherKit'` - WeatherKit（不替换）
-             * - `'Calculate'` - iRingo内置算法
-             * - `'QWeather'` - 和风天气（国标，12年2月版）
+             * - `'WeatherKit'` - WeatherKit (No replacement)
+             * - `'Calculate'` - iRingo Built-in Algorithm
+             * - `'QWeather'` - QWeather (China AQI, 2012-02 edition)
              *
              * @defaultValue "WeatherKit"
              */
@@ -228,27 +228,27 @@ export interface Settings {
 };
     Calculate?: {
         /**
-         * [iRingo内置算法] 算法
+         * [iRingo Built-in Algorithm] Algorithm
          *
-         * 使用内置算法，通过污染物数据本地计算空气指数。InstantCast源自于WAQI，美标版本使用了WAQI的臭氧标准。
+         * Use the built-in algorithm to calculate AQI locally from pollutant data. InstantCast is based on WAQI, and the US version uses WAQI's ozone standard.
          *
          * @remarks
          *
          * Possible values:
-         * - `'None'` - 不转换
-         * - `'UBA'` - 德国LQI（FB001846）
-         * - `'EU_EAQI'` - 欧盟EAQI（ETC HE Report 2024/17）
-         * - `'WAQI_InstantCast_US'` - 美标InstantCast（EPA-454/B-24-002）
-         * - `'WAQI_InstantCast_CN'` - 国标InstantCast（HJ 633—2012）
-         * - `'WAQI_InstantCast_CN_25_DRAFT'` - 国标InstantCast（HJ 633 2025年草案）
+         * - `'None'` - No Conversion
+         * - `'UBA'` - Germany LQI (FB001846)
+         * - `'EU_EAQI'` - EU EAQI (ETC HE Report 2024/17)
+         * - `'WAQI_InstantCast_US'` - US InstantCast (EPA-454/B-24-002)
+         * - `'WAQI_InstantCast_CN'` - China InstantCast (HJ 633-2012)
+         * - `'WAQI_InstantCast_CN_25_DRAFT'` - China InstantCast (HJ 633 2025 Draft)
          *
          * @defaultValue "EU_EAQI"
          */
         Algorithm?: 'None' | 'UBA' | 'EU_EAQI' | 'WAQI_InstantCast_US' | 'WAQI_InstantCast_CN' | 'WAQI_InstantCast_CN_25_DRAFT';
         /**
-         * [iRingo内置算法] 允许指数超标
+         * [iRingo Built-in Algorithm] Allow Over-Range Index
          *
-         * 允许美标和国标的指数超过500。超过500时，指示颜色的小圆点会消失。
+         * Allow US and China AQI indexes to exceed 500. When the value exceeds 500, the small indicator color dot may disappear.
          *
          * @defaultValue true
          */
@@ -258,17 +258,17 @@ export interface Settings {
     API?: {
     OpenWeather?: {
             /**
-         * [API] OpenWeather 请求地址
+         * [API] OpenWeather Request URL
          *
-         * OpenWeather One Call API 4.0 请求地址
+         * OpenWeather One Call API 4.0 request URL
          *
          * @defaultValue "https://api.openweathermap.org/data/4.0/onecall"
          */
         URL?: string;
             /**
-         * [API] OpenWeather 令牌
+         * [API] OpenWeather Token
          *
-         * OpenWeather API 令牌
+         * OpenWeather API token
          *
          * @defaultValue ""
          */
@@ -276,17 +276,17 @@ export interface Settings {
 };
     QWeather?: {
         /**
-         * [API] 和风天气主机
+         * [API] QWeather Host
          *
-         * 和风天气 API 使用的主机名
+         * Hostname used by the QWeather API
          *
          * @defaultValue "devapi.qweather.com"
          */
         Host?: string;
         /**
-         * [API] 和风天气令牌
+         * [API] QWeather Token
          *
-         * 和风天气 API 令牌
+         * QWeather API token
          *
          * @defaultValue ""
          */
@@ -294,9 +294,9 @@ export interface Settings {
 };
     WAQI?: {
         /**
-         * [API] WAQI 令牌
+         * [API] WAQI Token
          *
-         * WAQI API 令牌，填写此字段将自动使用WAQI高级API
+         * WAQI API token. Filling this field automatically enables the WAQI advanced API.
          *
          * @defaultValue ""
          */
@@ -304,17 +304,17 @@ export interface Settings {
 };
     IQAir?: {
         /**
-         * [API] IQAir 请求地址
+         * [API] IQAir Request URL
          *
-         * IQAir AirVisual API 请求地址
+         * IQAir AirVisual API request URL
          *
          * @defaultValue "https://api.airvisual.com/v2/nearest_city"
          */
         URL?: string;
         /**
-         * [API] IQAir 令牌
+         * [API] IQAir Token
          *
-         * IQAir AirVisual API 令牌
+         * IQAir AirVisual API token
          *
          * @defaultValue ""
          */
@@ -322,34 +322,34 @@ export interface Settings {
 };
 };
     /**
-     * [储存] 配置类型
+     * [Storage] Configuration Type
      *
-     * 选择要使用的配置类型。未设置此选项或不通过此选项的旧版本的配置顺序依旧是 $persistentStore (BoxJs) > $argument > database。
+     * Choose the configuration source. For legacy setups without this option, the order remains $persistentStore (BoxJs) > $argument > database.
      *
      * @remarks
      *
      * Possible values:
-     * - `'Argument'` - 优先使用插件选项与模块参数等，由 $argument 传入的配置，$argument 不包含的设置项由 PersistentStore (BoxJs) 提供
-     * - `'PersistentStore'` - 只使用来自 BoxJs 等，由 $persistentStore 提供的配置
-     * - `'database'` - 只使用由作者的 database.mjs 文件提供的默认配置，其他任何自定义配置不再起作用
+     * - `'Argument'` - Prefer configuration passed by $argument, such as plugin options and module arguments. Missing $argument values are provided by PersistentStore (BoxJs).
+     * - `'PersistentStore'` - Only use configuration from $persistentStore, such as BoxJs.
+     * - `'database'` - Only use defaults from the author's database.mjs file. Other custom configuration will no longer take effect.
      *
      * @defaultValue "Argument"
      */
     Storage?: 'Argument' | 'PersistentStore' | 'database';
     /**
-     * [调试] 日志等级
+     * [Debug] Log Level
      *
-     * 选择脚本日志的输出等级，低于所选等级的日志将全部输出。
+     * Choose the script log level. Logs below the selected level will be suppressed.
      *
      * @remarks
      *
      * Possible values:
-     * - `'OFF'` - 关闭
-     * - `'ERROR'` - ❌ 错误
-     * - `'WARN'` - ⚠️ 警告
-     * - `'INFO'` - ℹ️ 信息
-     * - `'DEBUG'` - 🅱️ 调试
-     * - `'ALL'` - 全部
+     * - `'OFF'` - Off
+     * - `'ERROR'` - Error
+     * - `'WARN'` - Warning
+     * - `'INFO'` - Info
+     * - `'DEBUG'` - Debug
+     * - `'ALL'` - All
      *
      * @defaultValue "WARN"
      */

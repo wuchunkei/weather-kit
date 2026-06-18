@@ -2,15 +2,15 @@ import { Console, fetch } from "@nsnanocat/util";
 import * as WK2 from "../proto/apple/wk2.js";
 
 /**
- * MatchEnum - 用于比对 JSON 接口和 Flatbuffer 接口的枚举值是否一致
+ * MatchEnum compares whether enum values match between JSON and FlatBuffer responses.
  *
- * 变量命名约定：
- * - jsonValue: JSON 接口返回的枚举字符串值，如 "RAIN", "MINOR"
- * - protoValue: Flatbuffer 接口返回的枚举字符串值，如 "RAIN", "MINOR"
- * - protoEnumIndex: 枚举的数字索引，如 WK2.Severity["MINOR"] = 4
+ * Naming conventions:
+ * - jsonValue: enum string returned by the JSON API, such as "RAIN" or "MINOR".
+ * - protoValue: enum string returned by the FlatBuffer API, such as "RAIN" or "MINOR".
+ * - protoEnumIndex: numeric enum index, such as WK2.Severity["MINOR"] = 4.
  *
- * 比较逻辑：jsonValue 与 protoValue 进行字符串比较
- * 通知格式：json: {jsonValue} / proto: {protoEnumIndex}-{protoValue}
+ * Comparison logic: compare jsonValue and protoValue as strings.
+ * Notification format: json: {jsonValue} / proto: {protoEnumIndex}-{protoValue}.
  */
 export default class MatchEnum {
     constructor(proto) {
@@ -29,7 +29,7 @@ export default class MatchEnum {
         try {
             this.json = await fetch(this.request).then(res => JSON.parse(res?.body ?? "{}"));
         } catch (error) {
-            Console.error("初始化过程中发生错误:", error);
+            Console.error("Initialization failed:", error);
         }
     }
 
@@ -180,12 +180,12 @@ export default class MatchEnum {
         this.json?.news?.placements?.forEach((jsonPlacement, i) => {
             const jsonArticleIds = jsonPlacement?.articles?.map(a => a?.id) ?? [];
             const jsonHeadlines = jsonPlacement?.articles?.map(a => a?.headlineOverride) ?? [];
-            // 通过 articles 的 id 或 headlineOverride 匹配对应的 proto placement
+            // Match the corresponding proto placement by article id or headlineOverride.
             let protoIndex = -1;
             const protoPlacement = this.proto?.news?.placements?.find((p, idx) => {
                 const protoArticleIds = p?.articles?.map(a => a?.id) ?? [];
                 const protoHeadlines = p?.articles?.map(a => a?.headlineOverride) ?? [];
-                // 检查是否有相同的 article id 或 headline
+                // Check whether there is a shared article id or headline.
                 const matched = jsonArticleIds.some(id => protoArticleIds.includes(id)) || jsonHeadlines.some(h => h && protoHeadlines.includes(h));
                 if (matched) protoIndex = idx;
                 return matched;

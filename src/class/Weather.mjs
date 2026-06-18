@@ -6,25 +6,25 @@ export default class Weather {
     static Author = "Virgil Clyne & 001";
 
     /**
-     * 将 DSWRF（W/m²）估算为 UV Index（整数）
-     * @param {number} dswrf - 向下短波辐射通量
-     * @param {number} k - UV 占比系数，可选，默认 0.04
-     * @returns {number} UV Index（四舍五入为整数）
+     * Estimate UV Index from DSWRF (W/m2).
+     * @param {number} dswrf - Downward short-wave radiation flux.
+     * @param {number} k - Optional UV ratio coefficient. Defaults to 0.04.
+     * @returns {number} Rounded integer UV Index.
      */
     static ConvertDSWRF(dswrf, k = 0.04) {
         Console.info("☑️ ConvertDSWRF");
-        const uvIndex = Math.round((Math.max(dswrf, 0) * k) / 0.025); // 估算 UV Index
+        const uvIndex = Math.round((Math.max(dswrf, 0) * k) / 0.025); // Estimate UV Index.
         //Console.debug(`UV Index: ${uvIndex}`);
         Console.info("✅ ConvertDSWRF");
-        // 限制结果在 0~11，并四舍五入为整数
+        // Clamp the rounded result to 0-11.
         return Math.min(uvIndex, 11);
     }
 
     /**
-     * 将新的气象数组合并到原始气象数组
-     * @param {array} to - 原始气象数组
-     * @param {array} from - 新的气象数组
-     * @returns {array} 原始气象数组
+     * Merge a new forecast array into the original forecast array.
+     * @param {array} to - Original forecast array.
+     * @param {array} from - New forecast array.
+     * @returns {array} Original forecast array.
      */
     static mergeForecast(to = [], from = []) {
         let i = 0,
@@ -35,138 +35,138 @@ export default class Weather {
 
             if (forecastStart === newForecastStart) {
                 //Console.debug(`${i}: ${newForecastStart} -> ${forecastStart}`);
-                // 原地把 from[j] 的字段合入 to[i]（A 冲突字段保留 or 被覆盖，看你需要）
+                // Merge fields from from[j] into to[i] in place.
                 if (Object.hasOwn(from[j], "daytimeForecast")) from[j].daytimeForecast = { ...to[i].daytimeForecast, ...from[j].daytimeForecast };
                 if (Object.hasOwn(from[j], "overnightForecast")) from[j].overnightForecast = { ...to[i].overnightForecast, ...from[j].overnightForecast };
                 if (Object.hasOwn(from[j], "restOfDayForecast")) from[j].restOfDayForecast = { ...to[i].restOfDayForecast, ...from[j].restOfDayForecast };
-                Object.assign(to[i], from[j]); // 或者：Object.assign(to[i], {/* 自定义映射 */})
+                Object.assign(to[i], from[j]);
                 i++;
                 j++;
             } else if (newForecastStart < forecastStart) {
                 //Console.debug(`${j}: ${newForecastStart} -> X`);
-                j++; // 让 from 追上 to
+                j++; // Let from catch up with to.
             } else {
                 //Console.debug(`${i}: X -> ${forecastStart}`);
-                i++; // to 无匹配，保留 to[i]
+                i++; // No matching entry in to; keep to[i].
             }
         }
-        return to; // 可选：返回同一个引用
+        return to; // Return the same reference.
     }
 
     static ConvertWeatherCode(skycon) {
         switch (skycon) {
-            // 晴天
-            case "晴":
+            // Clear.
+            case "\u6674":
             case "CLEAR_DAY":
             case "CLEAR_NIGHT":
                 return "CLEAR";
 
-            // 多云相关
-            case "多云":
+            // Cloud-related values.
+            case "\u591a\u4e91":
             case "PARTLY_CLOUDY_DAY":
             case "PARTLY_CLOUDY_NIGHT":
                 return "PARTLY_CLOUDY";
-            case "少云":
+            case "\u5c11\u4e91":
                 return "MOSTLY_CLEAR";
-            case "晴间多云":
+            case "\u6674\u95f4\u591a\u4e91":
                 return "PARTLY_CLOUDY";
-            case "阴":
+            case "\u9634":
             case "CLOUDY":
                 return "CLOUDY";
 
-            // 风相关
+            // Wind-related values.
             case "WIND":
                 return "WINDY";
 
-            // 雾霾相关
-            case "薄雾":
-            case "雾":
-            case "浓雾":
-            case "强浓雾":
-            case "大雾":
-            case "特强浓雾":
+            // Fog and haze related values.
+            case "\u8584\u96fe":
+            case "\u96fe":
+            case "\u6d53\u96fe":
+            case "\u5f3a\u6d53\u96fe":
+            case "\u5927\u96fe":
+            case "\u7279\u5f3a\u6d53\u96fe":
             case "FOG":
                 return "FOGGY";
-            case "霾":
-            case "中度霾":
-            case "重度霾":
-            case "严重霾":
+            case "\u973e":
+            case "\u4e2d\u5ea6\u973e":
+            case "\u91cd\u5ea6\u973e":
+            case "\u4e25\u91cd\u973e":
             case "LIGHT_HAZE":
             case "MODERATE_HAZE":
             case "HEAVY_HAZE":
                 return "HAZE";
 
-            // 沙尘相关(Apple 缺失 DUST/SAND 定义，暂用 HAZE 代替)
-            case "扬沙":
-            case "浮尘":
-            case "沙尘暴":
-            case "强沙尘暴":
+            // Dust and sand. Apple has no DUST/SAND definition, so use HAZE.
+            case "\u626c\u6c99":
+            case "\u6d6e\u5c18":
+            case "\u6c99\u5c18\u66b4":
+            case "\u5f3a\u6c99\u5c18\u66b4":
             case "DUST":
             case "SAND":
                 return "HAZE";
 
-            // 降雨相关
-            case "小雨":
-            case "毛毛雨/细雨":
+            // Rain-related values.
+            case "\u5c0f\u96e8":
+            case "\u6bdb\u6bdb\u96e8/\u7ec6\u96e8":
             case "LIGHT_RAIN":
                 return "DRIZZLE";
-            case "雨":
-            case "阵雨":
-            case "中雨":
-            case "小到中雨":
+            case "\u96e8":
+            case "\u9635\u96e8":
+            case "\u4e2d\u96e8":
+            case "\u5c0f\u5230\u4e2d\u96e8":
             case "MODERATE_RAIN":
                 return "RAIN";
-            case "大雨":
-            case "中到大雨":
+            case "\u5927\u96e8":
+            case "\u4e2d\u5230\u5927\u96e8":
                 return "HEAVY_RAIN";
-            case "暴雨":
-            case "大暴雨":
-            case "强降雨":
-            case "特大暴雨":
-            case "大到暴雨":
-            case "暴雨到大暴雨":
-            case "大暴雨到特大暴雨":
-            case "极端降雨":
+            case "\u66b4\u96e8":
+            case "\u5927\u66b4\u96e8":
+            case "\u5f3a\u964d\u96e8":
+            case "\u7279\u5927\u66b4\u96e8":
+            case "\u5927\u5230\u66b4\u96e8":
+            case "\u66b4\u96e8\u5230\u5927\u66b4\u96e8":
+            case "\u5927\u66b4\u96e8\u5230\u7279\u5927\u66b4\u96e8":
+            case "\u6781\u7aef\u964d\u96e8":
             case "HEAVY_RAIN":
                 return "HEAVY_RAIN";
-            case "雷阵雨":
-            case "强雷阵雨":
+            case "\u96f7\u9635\u96e8":
+            case "\u5f3a\u96f7\u9635\u96e8":
             case "STORM_RAIN":
-            case "雷阵雨伴有冰雹":
+            case "\u96f7\u9635\u96e8\u4f34\u6709\u51b0\u96f9":
                 return "THUNDERSTORMS";
 
-            // 降雪相关
-            case "小雪":
+            // Snow-related values.
+            case "\u5c0f\u96ea":
             case "LIGHT_SNOW":
                 return "FLURRIES";
-            case "雪":
-            case "阵雪":
-            case "中雪":
-            case "小到中雪":
+            case "\u96ea":
+            case "\u9635\u96ea":
+            case "\u4e2d\u96ea":
+            case "\u5c0f\u5230\u4e2d\u96ea":
             case "MODERATE_SNOW":
                 return "SNOW";
-            case "大雪":
-            case "中到大雪":
+            case "\u5927\u96ea":
+            case "\u4e2d\u5230\u5927\u96ea":
             case "HEAVY_SNOW":
                 return "HEAVY_SNOW";
-            case "暴雪":
-            case "大到暴雪":
+            case "\u66b4\u96ea":
+            case "\u5927\u5230\u66b4\u96ea":
             case "STORM_SNOW":
                 return "BLIZZARD";
 
-            // 雨雪混合
-            case "雨夹雪":
-            case "雨雪天气":
-            case "阵雨夹雪":
-            case "冻雨":
+            // Mixed rain and snow.
+            case "\u96e8\u5939\u96ea":
+            case "\u96e8\u96ea\u5929\u6c14":
+            case "\u9635\u96e8\u5939\u96ea":
+            case "\u51bb\u96e8":
                 return "FREEZING_DRIZZLE";
 
-            // 温度相关
-            case "热":
-            case "冷":
+            // Temperature-related values.
+            case "\u70ed":
+            case "\u51b7":
 
-            // 未知
-            case "未知":
+            // Unknown.
+            case "\u672a\u77e5":
             default:
                 Console.debug(`skycon: ${skycon}`);
                 return null;
@@ -175,21 +175,21 @@ export default class Weather {
 
     static ConvertMoonPhase(moonPhase) {
         switch (moonPhase) {
-            case "新月":
+            case "\u65b0\u6708":
                 return "NEW";
-            case "蛾眉月":
+            case "\u86fe\u7709\u6708":
                 return "WAXING_CRESCENT";
-            case "上弦月":
+            case "\u4e0a\u5f26\u6708":
                 return "FIRST_QUARTER";
-            case "盈凸月":
+            case "\u76c8\u51f8\u6708":
                 return "WAXING_GIBBOUS";
-            case "满月":
+            case "\u6ee1\u6708":
                 return "FULL";
-            case "亏凸月":
+            case "\u4e8f\u51f8\u6708":
                 return "WANING_GIBBOUS";
-            case "下弦月":
+            case "\u4e0b\u5f26\u6708":
                 return "THIRD_QUARTER";
-            case "残月":
+            case "\u6b8b\u6708":
                 return "WANING_CRESCENT";
             default:
                 Console.debug(`moonPhase: ${moonPhase}`);

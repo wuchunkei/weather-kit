@@ -1,37 +1,44 @@
+## 3.1.5
+
+### 🔄 Other Changes
+  * Removed explicit AI-assistant attribution comments from source files.
+  * Translated plugin UI fields, generated TypeScript settings documentation, comments, provider display labels, module metadata, and developer-facing log messages to English where practical.
+  * Kept compatibility-only Chinese provider and weather-condition matches by converting them to Unicode escape sequences, preserving behavior while keeping source files readable for English-speaking developers.
+
 ## 3.1.3
 
 ### 🛠️ Bug Fixes
-  * 回退 3.1.2 对 `weather-map2.apple.com` 地图图层请求的 `US` 强制改写，避免 Air Quality map overlay 产生 `401`。
-  * 新增 WeatherKit 主请求的 request rewrite：当 `forecastNextHour` 被请求且 `[未来一小时降水强度]` 数据源不是 `WeatherKit` 时，临时将请求地区虚拟为 `US`，尝试触发 Weather App 的 next-hour precipitation 支持路径。
-  * WeatherKit 响应注入阶段会读取原始地区，避免 next-hour 的地区虚拟影响天气、空气质量等数据源替换判断。
-  * 扩展 next-hour 的 `US` 虚拟范围到 WeatherKit availability 请求，并同步改写 `GeoCountryCode`、locale country 与 Apple StoreFront，提升 Weather App 主页面显示 next-hour 模块的机会。
-  * 修正 availability 响应按接口版本返回对应数据集，`v1` 使用 `minuteForecast`，`v2/v3` 使用 `forecastNextHour`。
+  * Reverted the 3.1.2 forced `US` rewrite for `weather-map2.apple.com` map tile requests to avoid `401` responses for the Air Quality map overlay.
+  * Added WeatherKit main request rewriting: when `forecastNextHour` is requested and the `[Next-Hour Precipitation Intensity]` provider is not `WeatherKit`, the request country is temporarily virtualized as `US` to try to trigger the Weather app's next-hour precipitation path.
+  * The WeatherKit response injection stage now reads the original country so next-hour country virtualization does not affect weather or air-quality replacement decisions.
+  * Extended next-hour `US` virtualization to WeatherKit availability requests, and also rewrites `GeoCountryCode`, locale country, and Apple StoreFront to improve the chance of showing the next-hour module on the Weather app home screen.
+  * Fixed availability responses to return the correct data sets by API version: `v1` uses `minuteForecast`, while `v2/v3` use `forecastNextHour`.
 
 ## 3.1.2
 
 ### 🛠️ Bug Fixes
-  * 修复 Weather App 空气质量地图：为 `weather-map2.apple.com` 的地图图层请求加入本地 request rewrite，并将地图图层的地区 header 规范为 `US`，避免部分地区 Air Quality 图层不可用。
-  * 移除 WeatherKit 响应中的 `providerLogo` 写入，避免底部 provider footer 尝试显示自定义来源图标。
-  * 为 IQAir 当前空气质量请求增加单轮缓存，减少同一轮 WeatherKit 响应内重复请求导致的空结果。
+  * Fixed Weather app Air Quality map handling by adding a local request rewrite for `weather-map2.apple.com` map tile requests and normalizing the map tile region header to `US`, avoiding unavailable Air Quality layers in some regions.
+  * Removed `providerLogo` injection from WeatherKit responses to prevent the footer provider area from trying to display custom source icons.
+  * Added per-response caching for IQAir current air-quality requests to reduce empty results caused by repeated requests in the same WeatherKit response cycle.
 
 ### 🆕 New Features
-  * 新增基于云函数的 `WeatherKit (Rewrite)` 新模块，面向 `Loon`、`Surge`、`Stash`、`Shadowrocket` 提供新的 Rewrite 版本配置。
+  * Added a new cloud-function-based `WeatherKit (Rewrite)` module, with rewrite configurations for `Loon`, `Surge`, `Stash`, and `Shadowrocket`.
 
 ### 🛠️ Bug Fixes
-  * 修复和风天气 `YesterdayAirQuality` 在 `locationInfo` 为空时的空值访问问题，避免港澳等特殊定位条件下请求失败。
-  * 修复规则拦截范围，新增 `IP-ASN 6185` 并统一 `QUIC` 拒绝表达式，减少异常直连。
-  * 修复重复天气提供者设置逻辑。
+  * Fixed a null access issue in QWeather `YesterdayAirQuality` when `locationInfo` is empty, preventing failures in special location cases such as Hong Kong and Macau.
+  * Fixed the rule interception scope, added `IP-ASN 6185`, and unified `QUIC` rejection expressions to reduce unexpected direct connections.
+  * Fixed duplicate weather provider settings logic.
 
 ### 🔣 Dependencies
-  * 新增运行时依赖：`hono`、`node-fetch`、`fetch-cookie`。
-  * 更新开发与基础依赖：`@rspack/cli`、`@rspack/core` 升级至 `^1.7.7`，`@nsnanocat/util` 升级至 `^2.2.3`。
+  * Added runtime dependencies: `hono`, `node-fetch`, and `fetch-cookie`.
+  * Updated development and base dependencies: `@rspack/cli` and `@rspack/core` to `^1.7.7`, and `@nsnanocat/util` to `^2.2.3`.
 
 ### ‼️ Breaking Changes
   * none
 
 ### 🔄 Other Changes
-  * 为新的 Rewrite 版本补充基于 `Hono` 的云函数转发入口，并支持通过 `Vercel` 与 `Cloudflare Workers` 部署。
-  * 新增 workers 构建链路：增加 `arguments-builder.workers.config.ts` 与 `build:args:workers`，用于生成各平台代理模块产物。
-  * 统一工程结构：`Hono` 入口调整为 `src/Hono.js`，请求/响应处理拆分到 `src/process/Request*.mjs` 与 `src/process/Response*.mjs`，并统一模块后缀与命名。
-  * 新增并统一 workers 模板与模块命名，配置名称追加 `(Rewrite)` 后缀，提升不同版本的辨识度。
-  * 更新 `wrangler` 可观测性配置，并在 `.gitignore` 中补充 `.idea` 忽略规则。
+  * Added a `Hono`-based cloud-function forwarding entry for the new Rewrite version, with deployment support for `Vercel` and `Cloudflare Workers`.
+  * Added a workers build pipeline with `arguments-builder.workers.config.ts` and `build:args:workers` to generate proxy module artifacts for each platform.
+  * Unified project structure: moved the `Hono` entry to `src/Hono.js`, split request/response handling into `src/process/Request*.mjs` and `src/process/Response*.mjs`, and normalized module suffixes and naming.
+  * Added and unified workers templates and module naming, with the `(Rewrite)` suffix to improve version distinction.
+  * Updated `wrangler` observability configuration and added `.idea` to `.gitignore`.

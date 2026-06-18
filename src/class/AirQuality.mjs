@@ -6,37 +6,36 @@ export default class AirQuality {
     static Version = "3.1.0";
     static Author = "Virgil Clyne & Wordless Echo";
 
-    // Code by Claude
     static #CeilByPrecision(a, b) {
-        // 获取 b 的小数位数
+        // Get the number of decimal places in b.
         const decimals = (b.toString().split(".")[1] || "").length;
 
-        // 根据小数位数计算倍数
+        // Build a precision multiplier from the decimal length.
         const multiplier = 10 ** decimals;
 
-        // 向上取整
+        // Round upward at the same precision.
         return Math.ceil(a * multiplier) / multiplier;
     }
 
     /**
-     * 根据 AQI 数值定位其所属的分类等级（categoryIndex）。
+     * Find the categoryIndex for a given AQI index value.
      *
-     * 作用：
-     * - 在给定的 categories.ranges 中查找 index 落入的区间；
-     * - 返回该区间对应的 categoryIndex，供主污染物判断与展示层分级使用。
+     * Purpose:
+     * - Find the range that contains the index in categories.ranges.
+     * - Return the matching categoryIndex for primary-pollutant selection and UI categorization.
      *
      * @param {number} index
-     * 待判定的 AQI 指数值。
+     * AQI index value to classify.
      *
      * @param {{
      *   ranges?: Array<{ categoryIndex: number, indexes: [number, number] }>
      * }} categories
-     * 分类配置对象。
-     * - ranges[*].indexes 为 [min, max] 区间；
-     * - 使用 #CeilByPrecision 处理小数精度后再进行区间比较。
+     * Category configuration object.
+     * - ranges[*].indexes is a [min, max] range.
+     * - #CeilByPrecision is used before range comparison to normalize decimal precision.
      *
      * @returns {number}
-     * 命中的 categoryIndex；若 categories 无效或未命中区间，返回 -1。
+     * Matching categoryIndex. Returns -1 when categories are invalid or no range matches.
      */
 
     static CategoryIndex(index, categories) {
@@ -46,7 +45,7 @@ export default class AirQuality {
 
         if (!categories?.ranges || !Array.isArray(categories.ranges) || categories.ranges.length === 0) {
             Console.debug(`categories: ${JSON.stringify(categories)}`);
-            Console.error("GetPrimaryPollutant", "categories无效");
+            Console.error("GetPrimaryPollutant", "Invalid categories");
             return failedCategoryIndex;
         }
 
@@ -55,7 +54,7 @@ export default class AirQuality {
             return AirQuality.#CeilByPrecision(index, min) >= min && AirQuality.#CeilByPrecision(index, max) <= max;
         });
         if (!range) {
-            Console.error("CategoryIndex", `找不到index: ${index}对应的category`);
+            Console.error("CategoryIndex", `No category found for index: ${index}`);
             return failedCategoryIndex;
         }
 
@@ -70,7 +69,7 @@ export default class AirQuality {
         const diff = Number(todayCategoryIndex) - Number(yesterdayCategoryIndex);
 
         if (Number.isNaN(diff)) {
-            Console.error("CompareCategoryIndexes", "categoryIndex无效");
+            Console.error("CompareCategoryIndexes", "Invalid categoryIndex");
             return UNKNOWN;
         } else {
             if (diff === 0) {
@@ -104,7 +103,7 @@ export default class AirQuality {
             if (amount < 0) {
                 Console.error(
                     "ConvertUnits",
-                    `无法转换${pollutant.pollutantType}的单位`,
+                    `Unable to convert units for ${pollutant.pollutantType}`,
                     `${pollutant.amount} ${friendlyUnits[pollutant.units] ?? pollutant.units} (STP conversion factor: ${stpConversionFactors?.[pollutant.pollutantType] || -1}) -> ${amount} ${friendlyUnits[pollutantScale.units] ?? pollutantScale.units} (STP conversion factor: ${pollutantScale?.stpConversionFactor || -1})`,
                 );
                 return pollutant;
@@ -118,21 +117,20 @@ export default class AirQuality {
     }
 
     /**
-     * 修复污染物单位。
+     * Normalize pollutant units.
      *
-     * 说明：
-     * - 这是空气质量数据修复的统一入口（当前聚焦污染物单位修复）；
-     * - 当前仅处理和风天气（QWeather）CO 单位场景：其 CO 原始单位为 mg/m3，
-     *   需转换为 WeatherKit 使用的 µg/m3；
-     * - 后续同类修复请统一收敛到本方法内，必要时可将本方法升级为 FixAirQuality。
+     * Notes:
+     * - This is the shared entry point for air-quality normalization, currently focused on pollutant units.
+     * - QWeather reports CO in mg/m3, while WeatherKit expects ug/m3.
+     * - Add future provider-specific fixes here; this method can be promoted to FixAirQuality if needed.
      *
-     * @param {any} airQuality - 空气质量数据对象
-     * @returns {any} 单位修复后的空气质量数据对象
+     * @param {any} airQuality - Air-quality object.
+     * @returns {any} Air-quality object after unit normalization.
      */
     static FixPollutantsUnits(airQuality) {
         Console.info("☑️ FixPollutantsUnits");
         switch (airQuality?.metadata?.providerName) {
-            case "和风天气":
+            case "\u548c\u98ce\u5929\u6c14":
             case "QWeather": {
                 airQuality.pollutants = airQuality?.pollutants?.map(pollutant => {
                     switch (pollutant.pollutantType) {
@@ -161,7 +159,8 @@ export default class AirQuality {
         Console.info("☑️ GetStpConversionFactors");
 
         switch (airQuality?.metadata?.providerName) {
-            case "和风天气":
+            case "\u548c\u98ce\u5929\u6c14":
+            case "QWeather":
             case "BreezoMeter":
             default: {
                 Console.info("✅ GetStpConversionFactors", `STP conversion factors for ${airQuality?.metadata?.providerName}: US`);
@@ -332,7 +331,7 @@ export default class AirQuality {
 
         const lastDotIndex = scale?.lastIndexOf(".");
         if (!scale || lastDotIndex === -1) {
-            Console.error("GetNameFromScale", `无法找到${scale}的版本号`);
+            Console.error("GetNameFromScale", `Unable to find version number in scale: ${scale}`);
             return scale;
         }
 
@@ -342,13 +341,13 @@ export default class AirQuality {
     }
 
     /**
-     * 根据“昨日对比指数来源”和当前空气质量 scale，选择用于昨日对比计算的算法。
-     * - Calculate: 直接采用用户配置算法
-     * - QWeather: 固定使用国标 InstantCast
-     * - WeatherKit: 根据 scale 自动映射到内置算法
-     * @param {any} airQuality - 当前空气质量对象（用于读取 scale）
-     * @param {any} Settings - 全局设置对象
-     * @returns {string} 选中的算法名；无法匹配时返回空字符串
+     * Choose the algorithm used for yesterday comparison from the configured comparison source and current scale.
+     * - Calculate: use the user-configured algorithm directly.
+     * - QWeather: always use China InstantCast.
+     * - WeatherKit: map the current scale to a built-in algorithm.
+     * @param {any} airQuality - Current air-quality object, used to read scale.
+     * @param {any} Settings - Global settings object.
+     * @returns {string} Selected algorithm name. Returns an empty string when no algorithm matches.
      */
     static chooseAlogrithm(airQuality, Settings) {
         Console.info("☑️ chooseAlogrithm", `currentIndexProvider: ${Settings?.AirQuality?.Comparison?.Yesterday?.IndexProvider}`);
@@ -379,28 +378,29 @@ export default class AirQuality {
                         return currentScale;
                     }
 
-                    Console.error("chooseAlogrithm", "没有找到合适的内置算法");
+                    Console.error("chooseAlogrithm", "No suitable built-in algorithm found");
                     return "";
                 }
             }
             default: {
-                Console.error("chooseAlogrithm", "未知的currentIndexProvider");
+                Console.error("chooseAlogrithm", "Unknown currentIndexProvider");
                 return "";
             }
         }
     }
 
     /**
-     * 为 providerName 附加空气质量标准描述。
-     * @param {any} airQuality - 空气质量对象
-     * @param {any} Settings - 全局设置对象
-     * @returns {string} 带标准描述的 providerName
+     * Append an air-quality standard description to providerName.
+     * @param {any} airQuality - Air-quality object.
+     * @param {any} Settings - Global settings object.
+     * @returns {string} providerName with a standard description.
      */
     static appendScaleToProviderName(airQuality, Settings) {
         const providerName = airQuality?.metadata?.providerName;
         switch (providerName) {
-            case "和风天气":
-                return `${providerName}（国标，12年2月版）`;
+            case "\u548c\u98ce\u5929\u6c14":
+            case "QWeather":
+                return `${providerName === "\u548c\u98ce\u5929\u6c14" ? "QWeather" : providerName} (China AQI, 2012-02 edition)`;
             case "iRingo":
                 switch (Settings?.AirQuality?.Calculate?.Algorithm) {
                     case "EU_EAQI":
@@ -421,13 +421,13 @@ export default class AirQuality {
     }
 
     /**
-     * 计算单个污染物在目标标准下的 index。
+     * Calculate a single pollutant index under the target standard.
      *
      * @param {{pollutantType: string, amount: number, units: string}} pollutant
-     * 单个污染物数据。
+     * Single pollutant data.
      *
      * @param {string} pollutantType
-     * 污染物类型（如 OZONE/PM2_5/NO2）。
+     * Pollutant type, such as OZONE, PM2_5, or NO2.
      *
      * @param {{
      *   units: string,
@@ -437,17 +437,17 @@ export default class AirQuality {
      *     value: Array<{ indexes: [number, number], amounts: [number, number] }>
      *   }
      * }} pollutantScale
-     * 该污染物在目标标准下的分段阈值与单位。
+     * Segment thresholds and units for this pollutant under the target standard.
      *
      * @param {Record<string, string>} friendlyUnits
-     * 友好单位映射表（用于日志展示）。
+     * Friendly unit map used for log output.
      *
      * @returns {number}
-     * 该污染物的 index；低于最小阈值时返回 min.indexes[0]；超上限时使用 max 区间外推。
+     * Pollutant index. Returns min.indexes[0] below the minimum threshold and extrapolates from the max range above the limit.
      */
     static #ComputePollutantIndex(pollutant, pollutantType, pollutantScale, friendlyUnits) {
         if (!pollutantScale) {
-            Console.warn("PollutantsToIndexes", `标准未定义污染物${pollutantType}，index将标记为-1`);
+            Console.warn("PollutantsToIndexes", `Standard does not define pollutant ${pollutantType}; index will be marked as -1`);
             return -1;
         }
 
@@ -457,14 +457,14 @@ export default class AirQuality {
 
         const minValidAmount = pollutantScale.ranges.min.amounts[0];
         if (pollutant.amount < minValidAmount) {
-            Console.error("PollutantsToIndexes", `${pollutantType}的含量无效：${pollutant.amount} ${friendlyUnits[pollutantScale.units]}需要 >= ${minValidAmount}`);
+            Console.error("PollutantsToIndexes", `Invalid amount for ${pollutantType}: ${pollutant.amount} ${friendlyUnits[pollutantScale.units]} must be >= ${minValidAmount}`);
             return pollutantScale.ranges.min.indexes[0];
         }
 
         const isOverRange = pollutant.amount > pollutantScale.ranges.max.amounts[1];
         if (isOverRange) {
-            Console.warn("PollutantsToIndexes", `检测到爆表指数！${pollutantType}：${pollutant.amount} ${friendlyUnits[pollutantScale.units]}`);
-            Console.warn("PollutantsToIndexes", "注意身体！");
+            Console.warn("PollutantsToIndexes", `Over-range index detected for ${pollutantType}: ${pollutant.amount} ${friendlyUnits[pollutantScale.units]}`);
+            Console.warn("PollutantsToIndexes", "Please take care.");
         }
 
         const { indexes, amounts } = isOverRange
@@ -482,17 +482,17 @@ export default class AirQuality {
     }
 
     /**
-     * 将污染物浓度映射为对应标准下的污染物指数（index）。
+     * Map pollutant concentrations to pollutant indexes under the target standard.
      *
-     * 作用：
-     * 1) 按 pollutantScales 定义，逐个污染物查找浓度区间；
-     * 2) 使用 #ComputePollutantIndex 计算单污染物 index；
-     * 3) 返回用于后续主污染物判定的一组 { pollutantType, index }。
+     * Purpose:
+     * 1) Find the concentration range for each pollutant from pollutantScales.
+     * 2) Use #ComputePollutantIndex to calculate each pollutant index.
+     * 3) Return { pollutantType, index } values for primary-pollutant selection.
      *
      * @param {Array<{pollutantType: string, amount: number, units: string}>} pollutants
-     * 污染物列表。
-     * - amount 的单位由 units 字段表示（如 µg/m³、mg/m³、ppb、ppm）。
-     * - 进入该方法前应已与 pollutantScales 的目标单位对齐。
+     * Pollutant list.
+     * - The units field represents the physical unit of amount, such as ug/m3, mg/m3, ppb, or ppm.
+     * - Before entering this method, pollutants should already be aligned to the target units in pollutantScales.
      *
      * @param {Record<string, {
      *   units: string,
@@ -502,11 +502,11 @@ export default class AirQuality {
      *     value: Array<{ indexes: [number, number], amounts: [number, number] }>
      *   }
      * }>} pollutantScales
-     * 指标标准定义，包含每种污染物的单位及分段阈值。
+     * Index standard definition, including units and segment thresholds for each pollutant.
      *
      * @returns {Array<{pollutantType: string, index: number}>}
-     * 每种标准污染物对应的 index 列表。
-     * - 若标准所需污染物缺失，返回该污染物 index=-1。
+     * Index list for each standard pollutant.
+     * - When a pollutant required by the standard is missing, that pollutant returns index=-1.
      */
     static #PollutantsToIndexes(pollutants = [], pollutantScales) {
         return pollutants.map(pollutant => {
@@ -522,7 +522,7 @@ export default class AirQuality {
 
         if (!Array.isArray(pollutants) || pollutants.length === 0) {
             Console.debug(`pollutants: ${JSON.stringify(pollutants)}`);
-            Console.error("PrimaryPollutant", "pollutants无效");
+            Console.error("PrimaryPollutant", "Invalid pollutants");
             return failedPollutant;
         }
 
@@ -536,7 +536,7 @@ export default class AirQuality {
 
         if (indexesWithCategory.length === 0) {
             Console.debug(`pollutants: ${JSON.stringify(pollutants)}`, `indexesWithCategory: ${JSON.stringify(indexesWithCategory)}`);
-            Console.error("PrimaryPollutant", "找不到有效的index");
+            Console.error("PrimaryPollutant", "No valid index found");
             return failedPollutant;
         }
 
@@ -544,8 +544,8 @@ export default class AirQuality {
         const primaryPollutants = indexesWithCategory.filter(({ categoryIndex }) => categoryIndex === maxCategoryIndex);
 
         if (primaryPollutants.length > 1) {
-            Console.warn("PrimaryPollutant", `检测到多个同级别的污染物，maxCategoryIndex：${maxCategoryIndex}`);
-            primaryPollutants.map(({ pollutantType, index }) => Console.warn("GetPrimaryPollutants", `${pollutantType}：${index}`));
+            Console.warn("PrimaryPollutant", `Multiple pollutants share the same category, maxCategoryIndex: ${maxCategoryIndex}`);
+            primaryPollutants.map(({ pollutantType, index }) => Console.warn("GetPrimaryPollutants", `${pollutantType}: ${index}`));
         }
 
         const primaryPollutant = primaryPollutants[0];
@@ -554,33 +554,33 @@ export default class AirQuality {
     }
 
     /**
-     * 将污染物浓度转换为统一 airQuality 结构。
+     * Convert pollutant concentrations into a normalized airQuality object.
      *
-     * 作用：
-     * 1) 按 scale 定义将污染物转换到目标单位（可选）；
-     * 2) 计算各污染物指数并确定主污染物；
-     * 3) 产出 WeatherKit 风格 airQuality，并按需执行 index 上限裁剪。
+     * Purpose:
+     * 1) Convert pollutants to target units defined by scale when configured.
+     * 2) Calculate pollutant indexes and choose the primary pollutant.
+     * 3) Produce a WeatherKit-style airQuality object and clamp the index when required.
      *
      * @param {Array<{pollutantType: string, amount: number, units: string}>} pollutants
-     * 原始污染物数组。
-     * - amount 的物理单位由每个元素的 units 字段决定（如 µg/m³、mg/m³、ppb、ppm）。
+     * Raw pollutant array.
+     * - The units field of each item determines the physical unit of amount, such as ug/m3, mg/m3, ppb, or ppm.
      *
      * @param {{
      *   weatherKitScale: {name: string, version: string, maxIndex?: number},
      *   pollutants: Record<string, {units: string, stpConversionFactor?: number, ranges: any}>,
      *   categories: {significantIndex: number, ranges: Array<{categoryIndex: number, indexes: number[]}>}
      * }} scale
-     * AQI 标准配置。
-     * - scale.pollutants[*].units 为目标单位。
-     * - scale.weatherKitScale.maxIndex 为可选 index 上限。
+     * AQI standard configuration.
+     * - scale.pollutants[*].units is the target unit.
+     * - scale.weatherKitScale.maxIndex is an optional index cap.
      *
      * @param {{
      *   stpConversionFactors?: Record<string, number>,
      *   allowOverRange?: boolean
      * }} [options]
-     * 计算选项。
-     * - stpConversionFactors：单位换算因子表（无量纲）。提供时会先执行单位转换。
-     * - allowOverRange：是否允许 index 超出 maxIndex；默认 true。
+     * Calculation options.
+     * - stpConversionFactors: dimensionless unit conversion factor table. When provided, unit conversion runs first.
+     * - allowOverRange: whether indexes can exceed maxIndex. Defaults to true.
      *
      * @returns {{
      *   index: number,
@@ -591,7 +591,7 @@ export default class AirQuality {
      *   primaryPollutant: string,
      *   scale: string
      * } | {metadata: {providerName: string, temporarilyUnavailable: boolean}}}
-     * 返回标准化 airQuality；当输入无效时返回 temporarilyUnavailable 结果。
+     * Normalized airQuality object. Returns a temporarilyUnavailable result when input is invalid.
      */
     static #PollutantsToAirQuality(pollutants, scale, options = {}) {
         Console.info("☑️ PollutantsToAirQuality");
@@ -600,7 +600,7 @@ export default class AirQuality {
 
         if (!Array.isArray(pollutants) || pollutants.length === 0) {
             Console.debug(`pollutants: ${JSON.stringify(pollutants)}`);
-            Console.error("PollutantsToAirQuality", "pollutants无效");
+            Console.error("PollutantsToAirQuality", "Invalid pollutants");
             return { metadata: { providerName: "iRingo", temporarilyUnavailable: true } };
         }
 
@@ -836,7 +836,8 @@ export default class AirQuality {
             },
             /**
              * China AQI standard.
-             * [环境空气质量指数（AQI）技术规定（试行）]{@link https://www.mee.gov.cn/ywgz/fgbz/bz/bzwb/jcffbz/201203/t20120302_224166.shtml}
+             * Ambient Air Quality Index (AQI) Technical Regulation (Trial).
+             * @link https://www.mee.gov.cn/ywgz/fgbz/bz/bzwb/jcffbz/201203/t20120302_224166.shtml
              */
             HJ6332012: {
                 weatherKitScale: {
@@ -844,14 +845,14 @@ export default class AirQuality {
                     version: "2414",
                 },
                 categories: {
-                    significantIndex: 3, // 轻度污染
+                    significantIndex: 3, // Lightly polluted.
                     ranges: [
-                        { categoryIndex: 1, indexes: [0, 50] }, // 优
-                        { categoryIndex: 2, indexes: [51, 100] }, // 良
-                        { categoryIndex: 3, indexes: [101, 150] }, // 轻度污染
-                        { categoryIndex: 4, indexes: [151, 200] }, // 中度污染
-                        { categoryIndex: 5, indexes: [201, 300] }, // 重度污染
-                        { categoryIndex: 6, indexes: [301, 500] }, // 严重污染
+                        { categoryIndex: 1, indexes: [0, 50] }, // Excellent.
+                        { categoryIndex: 2, indexes: [51, 100] }, // Good.
+                        { categoryIndex: 3, indexes: [101, 150] }, // Lightly polluted.
+                        { categoryIndex: 4, indexes: [151, 200] }, // Moderately polluted.
+                        { categoryIndex: 5, indexes: [201, 300] }, // Heavily polluted.
+                        { categoryIndex: 6, indexes: [301, 500] }, // Severely polluted.
                     ],
                 },
                 pollutants: {
@@ -883,7 +884,7 @@ export default class AirQuality {
                                 { indexes: [51, 100], amounts: [151, 500] },
                                 { indexes: [101, 150], amounts: [501, 650] },
                                 { indexes: [151, 200], amounts: [651, 800] },
-                                // 二氧化硫（SO2）1小时平均浓度高于800 ug/m3的，不再进行其空气质量分指数计算，二氧化硫（SO2）空气质量分指数按24小时平均浓度计算的分指数报告。
+                                // When 1-hour SO2 exceeds 800 ug/m3, do not calculate its IAQI from 1-hour concentration; report SO2 IAQI from the 24-hour average instead.
                             ],
                         },
                     },
@@ -1001,7 +1002,7 @@ export default class AirQuality {
                                 { indexes: [101, 150], amounts: [161, 215] },
                                 { indexes: [151, 200], amounts: [216, 265] },
                                 { indexes: [201, 300], amounts: [266, 800] },
-                                // 臭氧（O3）8小时平均浓度值高于800 ug/m3的，不再进行其空气质量分指数计算，臭氧（O3）空气质量分指数按1小时平均浓度计算的分指数报告。
+                                // When 8-hour O3 exceeds 800 ug/m3, do not calculate its IAQI from 8-hour concentration; report O3 IAQI from the 1-hour concentration instead.
                             ],
                         },
                     },
@@ -1026,7 +1027,8 @@ export default class AirQuality {
             },
             /**
              * China AQI standard (2025 draft).
-             * [关于公开征求《环境空气质量标准（征求意见稿）》等3项生态环境标准意见的通知]{@link https://www.mee.gov.cn/xxgk2018/xxgk/xxgk06/202512/t20251215_1137858.html}
+             * Notice requesting public comments on draft ambient air quality standards.
+             * @link https://www.mee.gov.cn/xxgk2018/xxgk/xxgk06/202512/t20251215_1137858.html
              */
             HJ6332025_DRAFT: {
                 weatherKitScale: {
@@ -1034,14 +1036,14 @@ export default class AirQuality {
                     version: "2414",
                 },
                 categories: {
-                    significantIndex: 3, // 轻度污染
+                    significantIndex: 3, // Lightly polluted.
                     ranges: [
-                        { categoryIndex: 1, indexes: [1, 50] }, // 优
-                        { categoryIndex: 2, indexes: [51, 100] }, // 良
-                        { categoryIndex: 3, indexes: [101, 150] }, // 轻度污染
-                        { categoryIndex: 4, indexes: [151, 200] }, // 中度污染
-                        { categoryIndex: 5, indexes: [201, 300] }, // 重度污染
-                        { categoryIndex: 6, indexes: [301, 500] }, // 严重污染
+                        { categoryIndex: 1, indexes: [1, 50] }, // Excellent.
+                        { categoryIndex: 2, indexes: [51, 100] }, // Good.
+                        { categoryIndex: 3, indexes: [101, 150] }, // Lightly polluted.
+                        { categoryIndex: 4, indexes: [151, 200] }, // Moderately polluted.
+                        { categoryIndex: 5, indexes: [201, 300] }, // Heavily polluted.
+                        { categoryIndex: 6, indexes: [301, 500] }, // Severely polluted.
                     ],
                 },
                 pollutants: {
@@ -1062,7 +1064,7 @@ export default class AirQuality {
                             ],
                         },
                     },
-                    // SO2、NO2、CO和O3 1小时平均浓度限值仅用于实时报。
+                    // 1-hour SO2, NO2, CO, and O3 limits are only used for real-time reporting.
                     SO2: {
                         units: "MICROGRAMS_PER_CUBIC_METER",
                         stpConversionFactor: -1,
@@ -1074,7 +1076,7 @@ export default class AirQuality {
                                 { indexes: [51, 100], amounts: [151, 500] },
                                 { indexes: [101, 150], amounts: [501, 650] },
                                 { indexes: [151, 200], amounts: [651, 800] },
-                                // SO2 1小时平均浓度值高于800 μg/m3的，IAQI按照200计。
+                                // When 1-hour SO2 exceeds 800 ug/m3, report IAQI as 200.
                                 { indexes: [200, 200], amounts: [801, Number.POSITIVE_INFINITY] },
                             ],
                         },
@@ -1096,7 +1098,7 @@ export default class AirQuality {
                             ],
                         },
                     },
-                    // SO2、NO2、CO和O3 1小时平均浓度限值仅用于实时报。
+                    // 1-hour SO2, NO2, CO, and O3 limits are only used for real-time reporting.
                     NO2: {
                         units: "MICROGRAMS_PER_CUBIC_METER",
                         stpConversionFactor: -1,
@@ -1131,7 +1133,7 @@ export default class AirQuality {
                             ],
                         },
                     },
-                    // SO2、NO2、CO和O3 1小时平均浓度限值仅用于实时报。
+                    // 1-hour SO2, NO2, CO, and O3 limits are only used for real-time reporting.
                     CO: {
                         units: "MILLIGRAMS_PER_CUBIC_METER",
                         stpConversionFactor: -1,
@@ -1161,12 +1163,12 @@ export default class AirQuality {
                                 { indexes: [101, 150], amounts: [161, 215] },
                                 { indexes: [151, 200], amounts: [216, 265] },
                                 { indexes: [201, 300], amounts: [266, 800] },
-                                // O3 8小时平均浓度值高于800 μg/m3的，IAQI按照300计。
+                                // When 8-hour O3 exceeds 800 ug/m3, report IAQI as 300.
                                 { indexes: [300, 300], amounts: [801, Number.POSITIVE_INFINITY] },
                             ],
                         },
                     },
-                    // SO2、NO2、CO和O3 1小时平均浓度限值仅用于实时报。
+                    // 1-hour SO2, NO2, CO, and O3 limits are only used for real-time reporting.
                     OZONE: {
                         units: "MICROGRAMS_PER_CUBIC_METER",
                         stpConversionFactor: -1,
@@ -1517,14 +1519,14 @@ export default class AirQuality {
                     maxIndex: 500,
                 },
                 categories: {
-                    significantIndex: 3, // 轻度污染
+                    significantIndex: 3, // Lightly polluted.
                     ranges: [
-                        { categoryIndex: 1, indexes: [0, 50] }, // 优
-                        { categoryIndex: 2, indexes: [51, 100] }, // 良
-                        { categoryIndex: 3, indexes: [101, 150] }, // 轻度污染
-                        { categoryIndex: 4, indexes: [151, 200] }, // 中度污染
-                        { categoryIndex: 5, indexes: [201, 300] }, // 重度污染
-                        { categoryIndex: 6, indexes: [301, Number.POSITIVE_INFINITY] }, // 严重污染
+                        { categoryIndex: 1, indexes: [0, 50] }, // Excellent.
+                        { categoryIndex: 2, indexes: [51, 100] }, // Good.
+                        { categoryIndex: 3, indexes: [101, 150] }, // Lightly polluted.
+                        { categoryIndex: 4, indexes: [151, 200] }, // Moderately polluted.
+                        { categoryIndex: 5, indexes: [201, 300] }, // Heavily polluted.
+                        { categoryIndex: 6, indexes: [301, Number.POSITIVE_INFINITY] }, // Severely polluted.
                     ],
                 },
                 pollutants: {
@@ -1645,18 +1647,18 @@ export default class AirQuality {
                     maxIndex: 500,
                 },
                 categories: {
-                    significantIndex: 3, // 轻度污染
+                    significantIndex: 3, // Lightly polluted.
                     ranges: [
-                        { categoryIndex: 1, indexes: [1, 50] }, // 优
-                        { categoryIndex: 2, indexes: [51, 100] }, // 良
-                        { categoryIndex: 3, indexes: [101, 150] }, // 轻度污染
-                        { categoryIndex: 4, indexes: [151, 200] }, // 中度污染
-                        { categoryIndex: 5, indexes: [201, 300] }, // 重度污染
-                        { categoryIndex: 6, indexes: [301, Number.POSITIVE_INFINITY] }, // 严重污染
+                        { categoryIndex: 1, indexes: [1, 50] }, // Excellent.
+                        { categoryIndex: 2, indexes: [51, 100] }, // Good.
+                        { categoryIndex: 3, indexes: [101, 150] }, // Lightly polluted.
+                        { categoryIndex: 4, indexes: [151, 200] }, // Moderately polluted.
+                        { categoryIndex: 5, indexes: [201, 300] }, // Heavily polluted.
+                        { categoryIndex: 6, indexes: [301, Number.POSITIVE_INFINITY] }, // Severely polluted.
                     ],
                 },
                 pollutants: {
-                    // SO2、NO2、CO和O3 1小时平均浓度限值仅用于实时报。
+                    // 1-hour SO2, NO2, CO, and O3 limits are only used for real-time reporting.
                     SO2: {
                         units: "MICROGRAMS_PER_CUBIC_METER",
                         stpConversionFactor: -1,
@@ -1668,12 +1670,12 @@ export default class AirQuality {
                                 { indexes: [51, 100], amounts: [151, 500] },
                                 { indexes: [101, 150], amounts: [501, 650] },
                                 { indexes: [151, 200], amounts: [651, 800] },
-                                // SO2 1小时平均浓度值高于800 μg/m3的，IAQI按照200计。
+                                // When 1-hour SO2 exceeds 800 ug/m3, report IAQI as 200.
                                 { indexes: [200, 200], amounts: [801, Number.POSITIVE_INFINITY] },
                             ],
                         },
                     },
-                    // SO2、NO2、CO和O3 1小时平均浓度限值仅用于实时报。
+                    // 1-hour SO2, NO2, CO, and O3 limits are only used for real-time reporting.
                     NO2: {
                         units: "MICROGRAMS_PER_CUBIC_METER",
                         stpConversionFactor: -1,
@@ -1692,7 +1694,7 @@ export default class AirQuality {
                             ],
                         },
                     },
-                    // SO2、NO2、CO和O3 1小时平均浓度限值仅用于实时报。
+                    // 1-hour SO2, NO2, CO, and O3 limits are only used for real-time reporting.
                     CO: {
                         units: "MICROGRAMS_PER_CUBIC_METER",
                         stpConversionFactor: -1,
@@ -1711,7 +1713,7 @@ export default class AirQuality {
                             ],
                         },
                     },
-                    // SO2、NO2、CO和O3 1小时平均浓度限值仅用于实时报。
+                    // 1-hour SO2, NO2, CO, and O3 limits are only used for real-time reporting.
                     OZONE: {
                         units: "MICROGRAMS_PER_CUBIC_METER",
                         stpConversionFactor: -1,
@@ -1848,7 +1850,7 @@ export default class AirQuality {
         const ppx = [ppb, ppm];
         const units = [...ppx, ugm3, mgm3];
         if (!units.includes(from) || !units.includes(to)) {
-            Console.error("ConvertUnit", "不支持的单位", `from: ${from}`, `to: ${to}`);
+            Console.error("ConvertUnit", "Unsupported units", `from: ${from}`, `to: ${to}`);
             return -1;
         }
 
@@ -1857,7 +1859,7 @@ export default class AirQuality {
         const isBothPpx = isPpxFrom && isPpxTo;
         if (isBothPpx && fromStpConversionFactor !== toStpConversionFactor) {
             if (fromStpConversionFactor <= 0 || toStpConversionFactor <= 0) {
-                Console.error("ConvertUnit", "无效的STP conversion factor", `fromStpConversionFactor: ${fromStpConversionFactor}`, `toStpConversionFactor: ${toStpConversionFactor}`);
+                Console.error("ConvertUnit", "Invalid STP conversion factor", `fromStpConversionFactor: ${fromStpConversionFactor}`, `toStpConversionFactor: ${toStpConversionFactor}`);
                 return -1;
             }
 

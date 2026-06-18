@@ -1,9 +1,9 @@
 {
     "name": "@nsringo/weatherkit",
-    "version": "3.1.4",
+    "version": "3.1.5",
     "organizationName": " iRingo",
     "displayName": " iRingo: 🌤 WeatherKit",
-    "description": "iOS 18 & macOS 15 & watchOS 11\n1.解锁全部天气功能\n2.替换空气质量数据\n3.添加下一小时降水数据\n4.添加天气数据\n\n开源二创说明：本项目基于 NSRingo/WeatherKit 等开源成果进行二次创作与功能扩展，仅供学习研究与个人使用。WeatherKit、Apple、OpenWeather、WAQI、IQAir、香港天文台及相关数据、商标、服务均归各自权利方所有；使用者应自行遵守对应服务条款与当地法律法规。",
+    "description": "iOS 18 & macOS 15 & watchOS 11\n1. Unlock all Weather features\n2. Replace air-quality data\n3. Add next-hour precipitation data\n4. Add weather data replacement\n\nOpen-source derivative notice: This project is a secondary creation and functional extension based on NSRingo/WeatherKit and related open-source work. It is intended for learning, research, and personal use only. WeatherKit, Apple, OpenWeather, WAQI, IQAir, Hong Kong Observatory, and related data, trademarks, and services belong to their respective rights holders. Users should comply with applicable service terms and local laws.",
     "homepage": "https://github.com/wuchunkei/weather-kit",
     "openUrl": "http://boxjs.com/#/app/iRingo.WeatherKit",
     "icon": "https://developer.apple.com/assets/elements/icons/weatherkit/weatherkit-128x128.png",

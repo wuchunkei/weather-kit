@@ -52,49 +52,49 @@ export const output = {
 const dataSets: Arg[] = [
     {
         key: "DataSets",
-        name: "[数据集]",
+        name: "[Data Sets]",
         defaultValue: ["airQuality", "currentWeather", "forecastDaily", "forecastHourly", "forecastNextHour", "locationInfo", "news", "historicalComparisons", "weatherAlerts", "weatherChanges"],
         type: "array",
-        description: "选中的数据集会被包含在请求中。",
+        description: "Selected data sets will be included in WeatherKit requests.",
         options: [
-            { key: "airQuality", label: "空气质量" },
-            { key: "currentWeather", label: "当前天气" },
-            { key: "forecastDaily", label: "每日预报" },
-            { key: "forecastHourly", label: "每小时预报" },
-            { key: "forecastNextHour", label: "未来一小时降水强度" },
-            { key: "locationInfo", label: "位置信息" },
-            { key: "news", label: "新闻" },
-            { key: "historicalComparisons", label: "历史对比" },
-            { key: "weatherAlerts", label: "天气预警" },
-            { key: "weatherChanges", label: "天气变化" },
+            { key: "airQuality", label: "Air Quality" },
+            { key: "currentWeather", label: "Current Weather" },
+            { key: "forecastDaily", label: "Daily Forecast" },
+            { key: "forecastHourly", label: "Hourly Forecast" },
+            { key: "forecastNextHour", label: "Next-Hour Precipitation Intensity" },
+            { key: "locationInfo", label: "Location Info" },
+            { key: "news", label: "News" },
+            { key: "historicalComparisons", label: "Historical Comparisons" },
+            { key: "weatherAlerts", label: "Weather Alerts" },
+            { key: "weatherChanges", label: "Weather Changes" },
         ],
     },
 ];
 
 const weatherReplace: Arg = {
     key: "Weather.Replace",
-    name: "[天气] 替换范围",
+    name: "[Weather] Replacement Scope",
     defaultValue: "CN",
     type: "string",
     options: [
-        { key: "CN", label: "中国大陆" },
-        { key: "CN|HK|MO|TW", label: "中国大陆、港澳台" },
-        { key: ".*", label: "全部地区" },
+        { key: "CN", label: "Mainland China" },
+        { key: "CN|HK|MO|TW", label: "Mainland China, Hong Kong, Macau, and Taiwan" },
+        { key: ".*", label: "All Regions" },
     ],
-    description: "只替换指定地区的天气。",
+    description: "Replace weather data only for matching regions.",
 };
 
 const weatherProvider: Arg = {
     key: "Weather.Provider",
-    name: "[天气] 数据源",
+    name: "[Weather] Data Source",
     defaultValue: "WeatherKit",
     type: "string",
     options: [
-        { key: "WeatherKit", label: "WeatherKit（不替换）" },
+        { key: "WeatherKit", label: "WeatherKit (No replacement)" },
         { key: "OpenWeather", label: "OpenWeather" },
-        { key: "QWeather", label: "和风天气" },
+        { key: "QWeather", label: "QWeather" },
     ],
-    description: "使用选定的数据源替换天气数据。",
+    description: "Use the selected provider to replace weather data.",
 };
 
 export const weather = [weatherReplace, weatherProvider];
@@ -102,15 +102,15 @@ const weatherFull = [weatherReplace, weatherProvider];
 
 const nextHourProvider: Arg = {
     key: "NextHour.Provider",
-    name: "[未来一小时降水强度] 数据源",
+    name: "[Next-Hour Precipitation Intensity] Data Source",
     defaultValue: "WeatherKit",
     type: "string",
     options: [
-        { key: "WeatherKit", label: "WeatherKit（不添加）" },
+        { key: "WeatherKit", label: "WeatherKit (Do not add)" },
         { key: "OpenWeather", label: "OpenWeather" },
-        { key: "QWeather", label: "和风天气" },
+        { key: "QWeather", label: "QWeather" },
     ],
-    description: "使用选定的数据源替换或填充未来一小时降水强度的数据。",
+    description: "Use the selected provider to replace or fill next-hour precipitation intensity data.",
 };
 
 export const nextHour = [nextHourProvider];
@@ -118,133 +118,133 @@ const nextHourFull = [nextHourProvider];
 
 const airQualityCurrentPollutantsProvider: Arg = {
     key: "AirQuality.Current.Pollutants.Provider",
-    name: "[今日污染物] 数据源",
+    name: "[Current Pollutants] Data Source",
     defaultValue: "WeatherKit",
     type: "string",
     options: [
-        { key: "WeatherKit", label: "WeatherKit（不替换）" },
+        { key: "WeatherKit", label: "WeatherKit (No replacement)" },
         { key: "WAQI", label: "WAQI" },
         { key: "IQAir", label: "IQAir" },
-        { key: "QWeather", label: "和风天气" },
+        { key: "QWeather", label: "QWeather" },
     ],
-    description: "使用选定的数据源填补污染物数据。IQAir 免费方案通常只返回 AQI，污染物浓度需要对应 API 方案支持。",
+    description: "Use the selected provider to fill pollutant data. IQAir free plans usually return AQI only; pollutant concentrations require a matching API plan.",
 };
 
 const airQualityCurrentPollutantsUnitsReplace: Arg = {
     key: "AirQuality.Current.Pollutants.Units.Replace",
-    name: "[今日污染物 - 单位转换] 替换目标",
+    name: "[Current Pollutants - Unit Conversion] Targets",
     defaultValue: [],
     type: "array",
     options: [
-        { key: "EPA_NowCast", label: "美国AQI（EPA_NowCast）" },
-        { key: "EU.EAQI", label: "欧盟EAQI（EU.EAQI）" },
-        { key: "HJ6332012", label: "中国AQI（HJ6332012）" },
-        { key: "UBA", label: "德国LQI（UBA）" },
+        { key: "EPA_NowCast", label: "US AQI (EPA_NowCast)" },
+        { key: "EU.EAQI", label: "EU EAQI (EU.EAQI)" },
+        { key: "HJ6332012", label: "China AQI (HJ6332012)" },
+        { key: "UBA", label: "Germany LQI (UBA)" },
     ],
-    description: "转换污染物的单位，方便与空气质量标准比对。单位转换会产生小数，有略微精度损失，且小数部分可能会被省略。",
+    description: "Convert pollutant units for comparison with air-quality standards. Unit conversion can introduce decimals, minor precision loss, and omitted decimal parts.",
 };
 
 const airQualityCurrentPollutantsUnitsMode: Arg = {
     key: "AirQuality.Current.Pollutants.Units.Mode",
-    name: "[今日污染物 - 单位转换] 模式",
+    name: "[Current Pollutants - Unit Conversion] Mode",
     defaultValue: "Scale",
     type: "string",
     options: [
-        { key: "Scale", label: "与空气质量标准的要求相同" },
-        { key: "ugm3", label: "除非标准要求，都转为µg/m³" },
-        { key: "EU_ppb", label: "除非标准要求，都转为欧盟ppb" },
-        { key: "US_ppb", label: "除非标准要求，都转为美标ppb" },
-        { key: "Force_ugm3", label: "µg/m³" },
-        { key: "Force_EU_ppb", label: "欧盟ppb" },
-        { key: "Force_US_ppb", label: "美标ppb" },
+        { key: "Scale", label: "Match the air-quality standard" },
+        { key: "ugm3", label: "Convert to ug/m3 unless the standard requires another unit" },
+        { key: "EU_ppb", label: "Convert to EU ppb unless the standard requires another unit" },
+        { key: "US_ppb", label: "Convert to US ppb unless the standard requires another unit" },
+        { key: "Force_ugm3", label: "ug/m3" },
+        { key: "Force_EU_ppb", label: "EU ppb" },
+        { key: "Force_US_ppb", label: "US ppb" },
     ],
-    description: "污染物单位的转换目标。",
+    description: "Target unit conversion mode for pollutants.",
 };
 
 const airQualityCurrentIndexReplace: Arg = {
     key: "AirQuality.Current.Index.Replace",
-    name: "[今日空气指数] 替换目标",
+    name: "[Current AQI] Replacement Targets",
     defaultValue: ["HJ6332012"],
     type: "array",
     options: [
-        { key: "HJ6332012", label: "中国AQI（HJ6332012）" },
-        { key: "IE.AQIH", label: "爱尔兰AQIH（IE.AQIH）" },
-        { key: "AT.AQI", label: "奥地利AQI（AT.AQI）" },
-        { key: "BE.BelAQI", label: "比利时BelAQI（BE.BelAQI）" },
-        { key: "UBA", label: "德国LQI（UBA）" },
-        { key: "FR.ATMO", label: "法国IQA（FR.ATMO）" },
-        { key: "KR.CAI", label: "韩国CAI（KR.CAI）" },
-        { key: "CA.AQHI", label: "加拿大AQHI（CA.AQHI）" },
-        { key: "CZ.AQI", label: "捷克AQI（CZ.AQI）" },
-        { key: "NL.LKI", label: "荷兰LKI（NL.LKI）" },
-        { key: "EPA_NowCast", label: "美国AQI（EPA_NowCast）" },
-        { key: "ICARS", label: "墨西哥ICARS（ICARS）" },
-        { key: "EU.EAQI", label: "欧盟EAQI（EU.EAQI）" },
-        { key: "CH.KBI", label: "瑞士KBI（CH.KBI）" },
-        { key: "ES.MITECO", label: "西班牙ICA（ES.MITECO）" },
-        { key: "SG.NEA", label: "新加坡PSI（SG.NEA）" },
-        { key: "NAQI", label: "印度NAQI（NAQI）" },
-        { key: "DAQI", label: "英国DAQI（DAQI）" },
+        { key: "HJ6332012", label: "China AQI (HJ6332012)" },
+        { key: "IE.AQIH", label: "Ireland AQIH (IE.AQIH)" },
+        { key: "AT.AQI", label: "Austria AQI (AT.AQI)" },
+        { key: "BE.BelAQI", label: "Belgium BelAQI (BE.BelAQI)" },
+        { key: "UBA", label: "Germany LQI (UBA)" },
+        { key: "FR.ATMO", label: "France IQA (FR.ATMO)" },
+        { key: "KR.CAI", label: "Korea CAI (KR.CAI)" },
+        { key: "CA.AQHI", label: "Canada AQHI (CA.AQHI)" },
+        { key: "CZ.AQI", label: "Czech AQI (CZ.AQI)" },
+        { key: "NL.LKI", label: "Netherlands LKI (NL.LKI)" },
+        { key: "EPA_NowCast", label: "US AQI (EPA_NowCast)" },
+        { key: "ICARS", label: "Mexico ICARS (ICARS)" },
+        { key: "EU.EAQI", label: "EU EAQI (EU.EAQI)" },
+        { key: "CH.KBI", label: "Switzerland KBI (CH.KBI)" },
+        { key: "ES.MITECO", label: "Spain ICA (ES.MITECO)" },
+        { key: "SG.NEA", label: "Singapore PSI (SG.NEA)" },
+        { key: "NAQI", label: "India NAQI (NAQI)" },
+        { key: "DAQI", label: "UK DAQI (DAQI)" },
     ],
-    description: "替换指定标准的空气质量指数。",
+    description: "Replace air-quality indexes for the selected standards.",
 };
 
 const airQualityCurrentIndexProvider: Arg = {
     key: "AirQuality.Current.Index.Provider",
-    name: "[今日空气指数] 数据源",
+    name: "[Current AQI] Data Source",
     defaultValue: "WeatherKit",
     type: "string",
     options: [
-        { key: "WeatherKit", label: "WeatherKit（不替换）" },
-        { key: "Calculate", label: "iRingo内置算法" },
+        { key: "WeatherKit", label: "WeatherKit (No replacement)" },
+        { key: "Calculate", label: "iRingo Built-in Algorithm" },
         { key: "WAQI", label: "WAQI" },
-        { key: "IQAir", label: "IQAir（美标 EPA）" },
-        { key: "QWeather", label: "和风天气（国标，12年2月版）" },
+        { key: "IQAir", label: "IQAir (US EPA)" },
+        { key: "QWeather", label: "QWeather (China AQI, 2012-02 edition)" },
     ],
-    description: "使用选定的数据源填补和替换空气质量指数。",
+    description: "Use the selected provider to fill and replace AQI data.",
 };
 
 const airQualityCurrentIndexForceCNPrimaryPollutants: Arg = {
     key: "AirQuality.Current.Index.ForceCNPrimaryPollutants",
-    name: "[今日空气指数] 强制主要污染物",
+    name: "[Current AQI] Force Primary Pollutant",
     defaultValue: true,
     type: "boolean",
-    description: "忽略国标（HJ 633—2012）的AQI > 50规定，始终将IAQI最大的空气污染物作为主要污染物。",
+    description: "Ignore the HJ 633-2012 AQI > 50 rule and always use the pollutant with the highest IAQI as the primary pollutant.",
 };
 
 const airQualityCurrentFull = [airQualityCurrentPollutantsProvider, airQualityCurrentPollutantsUnitsReplace, airQualityCurrentPollutantsUnitsMode, airQualityCurrentIndexReplace, airQualityCurrentIndexProvider, airQualityCurrentIndexForceCNPrimaryPollutants];
 
 const airQualityComparisonReplace: Arg = {
     key: "AirQuality.Comparison.ReplaceWhenCurrentChange",
-    name: "[空气质量 - 对比昨日] 变化时替换",
+    name: "[Air Quality - Yesterday Comparison] Replace on Current Change",
     defaultValue: false,
     type: "boolean",
-    description: "即使已有对比昨日数据，当今日空气质量指数发生变化时，替换对比昨日数据。",
+    description: "Replace yesterday comparison data when today's AQI changes, even if comparison data already exists.",
 };
 
 const airQualityComparisonYesterdayPollutantsProvider: Arg = {
     key: "AirQuality.Comparison.Yesterday.PollutantsProvider",
-    name: "[昨日污染物] 数据源",
+    name: "[Yesterday Pollutants] Data Source",
     defaultValue: "WeatherKit",
     type: "string",
     options: [
-        { key: "WeatherKit", label: "WeatherKit（不替换）" },
-        { key: "QWeather", label: "和风天气" },
+        { key: "WeatherKit", label: "WeatherKit (No replacement)" },
+        { key: "QWeather", label: "QWeather" },
     ],
-    description: "为iRingo内置算法提供污染物数据，计算出昨日的空气质量指数。",
+    description: "Provide pollutant data for the iRingo built-in algorithm to calculate yesterday's AQI.",
 };
 
 const airQualityComparisonYesterdayIndexProvider: Arg = {
     key: "AirQuality.Comparison.Yesterday.IndexProvider",
-    name: "[昨日空气指数] 数据源",
+    name: "[Yesterday AQI] Data Source",
     defaultValue: "WeatherKit",
     type: "string",
     options: [
-        { key: "WeatherKit", label: "WeatherKit（不替换）" },
-        { key: "Calculate", label: "iRingo内置算法" },
-        { key: "QWeather", label: "和风天气（国标，12年2月版）" },
+        { key: "WeatherKit", label: "WeatherKit (No replacement)" },
+        { key: "Calculate", label: "iRingo Built-in Algorithm" },
+        { key: "QWeather", label: "QWeather (China AQI, 2012-02 edition)" },
     ],
-    description: "用来和今日空气质量指数对比的数据。",
+    description: "Data source used to compare with today's AQI.",
 };
 
 const airQualityComparisonFull = [airQualityComparisonReplace, airQualityComparisonYesterdayPollutantsProvider, airQualityComparisonYesterdayIndexProvider];
@@ -254,26 +254,26 @@ export const airQuality = [airQualityCurrentPollutantsProvider, airQualityCurren
 
 const calculateAlgorithm: Arg = {
     key: "AirQuality.Calculate.Algorithm",
-    name: "[iRingo内置算法] 算法",
+    name: "[iRingo Built-in Algorithm] Algorithm",
     defaultValue: "EU_EAQI",
     type: "string",
     options: [
-        { key: "None", label: "不转换" },
-        { key: "UBA", label: "德国LQI（FB001846）" },
-        { key: "EU_EAQI", label: "欧盟EAQI（ETC HE Report 2024/17）" },
-        { key: "WAQI_InstantCast_US", label: "美标InstantCast（EPA-454/B-24-002）" },
-        { key: "WAQI_InstantCast_CN", label: "国标InstantCast（HJ 633—2012）" },
-        { key: "WAQI_InstantCast_CN_25_DRAFT", label: "国标InstantCast（HJ 633 2025年草案）" },
+        { key: "None", label: "No Conversion" },
+        { key: "UBA", label: "Germany LQI (FB001846)" },
+        { key: "EU_EAQI", label: "EU EAQI (ETC HE Report 2024/17)" },
+        { key: "WAQI_InstantCast_US", label: "US InstantCast (EPA-454/B-24-002)" },
+        { key: "WAQI_InstantCast_CN", label: "China InstantCast (HJ 633-2012)" },
+        { key: "WAQI_InstantCast_CN_25_DRAFT", label: "China InstantCast (HJ 633 2025 Draft)" },
     ],
-    description: "使用内置算法，通过污染物数据本地计算空气指数。InstantCast源自于WAQI，美标版本使用了WAQI的臭氧标准。",
+    description: "Use the built-in algorithm to calculate AQI locally from pollutant data. InstantCast is based on WAQI, and the US version uses WAQI's ozone standard.",
 };
 
 const calculateAllowOverRange: Arg = {
     key: "AirQuality.Calculate.AllowOverRange",
-    name: "[iRingo内置算法] 允许指数超标",
+    name: "[iRingo Built-in Algorithm] Allow Over-Range Index",
     defaultValue: true,
     type: "boolean",
-    description: "允许美标和国标的指数超过500。超过500时，指示颜色的小圆点会消失。",
+    description: "Allow US and China AQI indexes to exceed 500. When the value exceeds 500, the small indicator color dot may disappear.",
 };
 
 export const calculate = [calculateAlgorithm];
@@ -282,91 +282,91 @@ const calculateFull = [calculateAlgorithm, calculateAllowOverRange];
 export const api: Arg[] = [
     {
         key: "API.OpenWeather.URL",
-        name: "[API] OpenWeather 请求地址",
+        name: "[API] OpenWeather Request URL",
         defaultValue: "https://api.openweathermap.org/data/4.0/onecall",
         type: "string",
         placeholder: "https://api.openweathermap.org/data/4.0/onecall",
-        description: "OpenWeather One Call API 4.0 请求地址",
+        description: "OpenWeather One Call API 4.0 request URL",
     },
     {
         key: "API.OpenWeather.Token",
-        name: "[API] OpenWeather 令牌",
+        name: "[API] OpenWeather Token",
         defaultValue: "",
         type: "string",
         placeholder: "123456789123456789abcdefghijklmnopqrstuv",
-        description: "OpenWeather API 令牌",
+        description: "OpenWeather API token",
     },
     {
         key: "API.QWeather.Host",
-        name: "[API] 和风天气主机",
+        name: "[API] QWeather Host",
         defaultValue: "devapi.qweather.com",
         type: "string",
         placeholder: "devapi.qweather.com",
-        description: "和风天气 API 使用的主机名",
+        description: "Hostname used by the QWeather API",
     },
     {
         key: "API.QWeather.Token",
-        name: "[API] 和风天气令牌",
+        name: "[API] QWeather Token",
         defaultValue: "",
         type: "string",
         placeholder: "123456789123456789abcdefghijklmnopqrstuv",
-        description: "和风天气 API 令牌",
+        description: "QWeather API token",
     },
     {
         key: "API.WAQI.Token",
-        name: "[API] WAQI 令牌",
+        name: "[API] WAQI Token",
         defaultValue: "",
         type: "string",
         placeholder: "123456789123456789abcdefghijklmnopqrstuv",
-        description: "WAQI API 令牌，填写此字段将自动使用WAQI高级API",
+        description: "WAQI API token. Filling this field automatically enables the WAQI advanced API.",
     },
     {
         key: "API.IQAir.URL",
-        name: "[API] IQAir 请求地址",
+        name: "[API] IQAir Request URL",
         defaultValue: "https://api.airvisual.com/v2/nearest_city",
         type: "string",
         placeholder: "https://api.airvisual.com/v2/nearest_city",
-        description: "IQAir AirVisual API 请求地址",
+        description: "IQAir AirVisual API request URL",
     },
     {
         key: "API.IQAir.Token",
-        name: "[API] IQAir 令牌",
+        name: "[API] IQAir Token",
         defaultValue: "",
         type: "string",
         placeholder: "123456789123456789abcdefghijklmnopqrstuv",
-        description: "IQAir AirVisual API 令牌",
+        description: "IQAir AirVisual API token",
     },
 ];
 
 export const storage: Arg[] = [
     {
         key: "Storage",
-        name: "[储存] 配置类型",
+        name: "[Storage] Configuration Type",
         defaultValue: "Argument",
         type: "string",
         options: [
-            { key: "Argument", label: "优先使用插件选项与模块参数等，由 $argument 传入的配置，$argument 不包含的设置项由 PersistentStore (BoxJs) 提供" },
-            { key: "PersistentStore", label: "只使用来自 BoxJs 等，由 $persistentStore 提供的配置" },
-            { key: "database", label: "只使用由作者的 database.mjs 文件提供的默认配置，其他任何自定义配置不再起作用" },
+            { key: "Argument", label: "Prefer configuration passed by $argument, such as plugin options and module arguments. Missing $argument values are provided by PersistentStore (BoxJs)." },
+            { key: "PersistentStore", label: "Only use configuration from $persistentStore, such as BoxJs." },
+            { key: "database", label: "Only use defaults from the author's database.mjs file. Other custom configuration will no longer take effect." },
         ],
-        description: "选择要使用的配置类型。未设置此选项或不通过此选项的旧版本的配置顺序依旧是 $persistentStore (BoxJs) > $argument > database。",
+        description: "Choose the configuration source. For legacy setups without this option, the order remains $persistentStore (BoxJs) > $argument > database.",
     },
 ];
 
 export const logLevel: Arg[] = [
     {
         key: "LogLevel",
-        name: "[调试] 日志等级",
+        name: "[Debug] Log Level",
         type: "string",
         defaultValue: "WARN",
-        description: "选择脚本日志的输出等级，低于所选等级的日志将全部输出。",
+        description: "Choose the script log level. Logs below the selected level will be suppressed.",
         options: [
-            { key: "OFF", label: "关闭" },
-            { key: "ERROR", label: "❌ 错误" },
-            { key: "WARN", label: "⚠️ 警告" },
-            { key: "INFO", label: "ℹ️ 信息" },
-            { key: "DEBUG", label: "🅱️ 调试" },
-            { key: "ALL", label: "全部" },
+            { key: "OFF", label: "Off" },
+            { key: "ERROR", label: "Error" },
+            { key: "WARN", label: "Warning" },
+            { key: "INFO", label: "Info" },
+            { key: "DEBUG", label: "Debug" },
+            { key: "ALL", label: "All" },
         ],
     },
 ];

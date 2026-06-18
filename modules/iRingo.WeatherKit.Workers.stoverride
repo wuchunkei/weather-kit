@@ -1,16 +1,17 @@
 name: " iRingo: 🌤 WeatherKit" (Rewrite)
 desc: |-
   iOS 18 & macOS 15 & watchOS 11
-  1.解锁全部天气功能
-  2.替换空气质量数据
-  3.添加下一小时降水数据
-  4.添加天气数据
+  1. Unlock all Weather features
+  2. Replace air-quality data
+  3. Add next-hour precipitation data
+  4. Add weather data replacement
 openUrl: "http://boxjs.com/#/app/iRingo.WeatherKit"
 author: |-
   VirgilClyne[https://github.com/VirgilClyne]
   WordlessEcho[https://github.com/WordlessEcho]
   001[https://github.com/001ProMax]
-homepage: "https://NSRingo.github.io/guide/Weather/weather-kit"
+  wuchunkei[https://github.com/wuchunkei]
+homepage: "https://github.com/wuchunkei/weather-kit"
 icon: "https://developer.apple.com/assets/elements/icons/weatherkit/weatherkit-128x128.png"
 category: " iRingo"
 date: "2026-03-12 09:39:04"
@@ -29,4 +30,3 @@ http:
     - ^https?:\/\/weatherkit\.apple\.com\/api\/v1\/availability\/ https://weatherkit.nanocat.cloud/api/v1/availability/ transparent
     # 🌤 WeatherKit.api.v2.weather.response
     - ^https?:\/\/weatherkit\.apple\.com\/api\/v2\/weather\/ https://weatherkit.nanocat.cloud/api/v2/weather/ transparent
-

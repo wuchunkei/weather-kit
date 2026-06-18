@@ -15,12 +15,12 @@ export default function providerNameToLogo(providerName, version) {
                     break;
             }
             break;
-        case "气象在线":
+        case "\u6c14\u8c61\u5728\u7ebf":
         case "WeatherOL":
             providerLogo = `https://raw.githubusercontent.com/NSRingo/WeatherKit/main/images/icon/${version}/WeatherOL.png`;
             break;
         case "QWeather":
-        case "和风天气":
+        case "\u548c\u98ce\u5929\u6c14":
             providerLogo = `https://weatherkit.apple.com/assets/${version}/QWeather.png`;
             break;
         case "OpenWeather":

@@ -79,15 +79,14 @@ export default class QWeather {
         }
     }
 
-    // Codes by Claude AI
     static GetLocationInfo(locationsGrid, latitude, longitude) {
         Console.info("☑️ GetLocationInfo");
 
         const { gridSize, grid } = locationsGrid;
 
-        // Haversine距离计算
+        // Haversine distance calculation.
         const distance = (lat1, lng1, lat2, lng2) => {
-            const R = 6371; // 地球半径(km)
+            const R = 6371; // Earth radius in kilometers.
             const dLat = ((lat2 - lat1) * Math.PI) / 180;
             const dLng = ((lng2 - lng1) * Math.PI) / 180;
             const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
@@ -149,7 +148,7 @@ export default class QWeather {
                         attributionUrl: body?.location?.[0]?.fxLink,
                         latitude: body?.location?.[0]?.lat,
                         longitude: body?.location?.[0]?.lon,
-                        providerName: "和风天气",
+                        providerName: "QWeather",
                         locationID: body?.location?.[0]?.id,
                     };
                     break;
@@ -184,7 +183,7 @@ export default class QWeather {
                             language: "zh-CN", // `${this.language}-${this.country}`,
                             latitude: this.latitude,
                             longitude: this.longitude,
-                            providerName: "和风天气",
+                            providerName: "QWeather",
                             readTime: timeStamp,
                             reportedTime: (new Date(body?.now?.pubTime).getTime() / 1000) | 0,
                             temporarilyUnavailable: false,
@@ -243,7 +242,7 @@ export default class QWeather {
                             language: "zh-CN", // `${this.language}-${this.country}`,
                             latitude: this.latitude,
                             longitude: this.longitude,
-                            providerName: "和风天气",
+                            providerName: "QWeather",
                             readTime: timeStamp,
                             reportedTime: (new Date(body?.now?.pubTime).getTime() / 1000) | 0,
                             temporarilyUnavailable: false,
@@ -257,7 +256,7 @@ export default class QWeather {
                         primaryPollutant: this.#Config.Pollutants[body?.now?.primary] || "NOT_AVAILABLE",
                         scale: "HJ6332012",
                     };
-                    if (body?.refer?.sources?.[0]) airQuality.metadata.providerName += `\n数据源: ${body?.refer?.sources?.[0]}`;
+                    if (body?.refer?.sources?.[0]) airQuality.metadata.providerName += `\nSource: ${body?.refer?.sources?.[0]}`;
                     break;
                 }
                 case "204":
@@ -313,7 +312,7 @@ export default class QWeather {
 
     async Minutely() {
         Console.info("☑️ Minutely");
-        // 判断可用性：当前数据源不支持这个国家/地区
+        // Availability check: this provider does not support the current country or region.
         if (!this.#Config.Availability.Minutely.includes(this.country)) {
             Console.warn("Minutely", `Unsupported country: ${this.country}`);
             return;
@@ -338,7 +337,7 @@ export default class QWeather {
                             language: "zh-CN", // `${this.language}-${this.country}`, // body?.lang,
                             latitude: this.latitude,
                             longitude: this.longitude,
-                            providerName: "和风天气",
+                            providerName: "QWeather",
                             readTime: timeStamp,
                             reportedTime: timeStamp,
                             temporarilyUnavailable: false,
@@ -411,7 +410,7 @@ export default class QWeather {
                             language: "zh-CN", // `${this.language}-${this.country}`, // body?.lang,
                             latitude: this.latitude,
                             longitude: this.longitude,
-                            providerName: "和风天气",
+                            providerName: "QWeather",
                             readTime: timeStamp,
                             reportedTime: new Date(body?.updateTime),
                             temporarilyUnavailable: false,
@@ -487,7 +486,7 @@ export default class QWeather {
                         language: "zh-CN", // `${this.language}-${this.country}`, // body?.lang,
                         latitude: this.latitude,
                         longitude: this.longitude,
-                        providerName: "和风天气",
+                        providerName: "QWeather",
                         readTime: timeStamp,
                         reportedTime: new Date(body?.updateTime),
                         temporarilyUnavailable: false,
@@ -497,12 +496,12 @@ export default class QWeather {
                     forecastDaily = {
                         metadata: metadata,
                         days: body?.daily?.map(daily => {
-                            const timeStamp = ((Date.parse(daily?.fxDate) / 1000) | 0) + timezoneOffset * 60; // 本地转 Unix 时间戳
+                            const timeStamp = ((Date.parse(daily?.fxDate) / 1000) | 0) + timezoneOffset * 60; // Convert local date to a Unix timestamp.
                             return {
                                 forecastStart: timeStamp,
                                 forecastEnd: timeStamp + 24 * 3600, // 24 hours
-                                // conditionCode: Weather.ConvertWeatherCode(daily?.textDay), // Not given (用白天数据代替)
-                                // humidity 用一整天的数据代替
+                                // conditionCode: Weather.ConvertWeatherCode(daily?.textDay), // Not given; use daytime data instead.
+                                // Use the whole-day humidity value instead.
                                 // humidityMax: daily?.humidity, // Not Accurate
                                 // humidityMin: daily?.humidity, // Not Accurate
                                 maxUvIndex: Number.parseInt(daily?.uvIndex, 10),
@@ -531,7 +530,7 @@ export default class QWeather {
                                 // visibilityMax: 0, // Not given
                                 // visibilityMin: 0, // Not given
                                 // windGustSpeedMax: 0, // Not given
-                                windSpeedAvg: (Number.parseFloat(daily?.windSpeedDay) * 7 + Number.parseFloat(daily?.windSpeedNight) * 17) / 24, // 加权平均：白天7小时，晚上17小时
+                                windSpeedAvg: (Number.parseFloat(daily?.windSpeedDay) * 7 + Number.parseFloat(daily?.windSpeedNight) * 17) / 24, // Weighted average: 7 daytime hours and 17 nighttime hours.
                                 // windSpeedMax: 0, // Not given
                                 daytimeForecast: {
                                     forecastStart: timeStamp + 7 * 3600, // 7 hours
@@ -541,7 +540,7 @@ export default class QWeather {
                                     // cloudCoverLowAltPct: 0, // Not given
                                     // cloudCoverMidAltPct: 0, // Not given
                                     conditionCode: Weather.ConvertWeatherCode(daily?.textDay),
-                                    // humidity 用一整天的数据代替
+                                    // Use the whole-day humidity value instead.
                                     // humidityMax: daily?.humidity, // Not Accurate
                                     // humidityMin: daily?.humidity, // Not Accurate
                                     precipitationAmount: Number.parseFloat(daily?.precip),
@@ -551,7 +550,7 @@ export default class QWeather {
                                     // snowfallAmount: 0, // Not given
                                     // temperatureMax: 0, // Not given
                                     // temperatureMin: 0, // Not given
-                                    // visibility 用一整天的数据代替
+                                    // Use the whole-day visibility value instead.
                                     // visibilityMax: 0, // Not given
                                     // visibilityMin: 0, // Not given
                                     windDirection: Number.parseInt(daily?.wind360Day, 10),
@@ -567,7 +566,7 @@ export default class QWeather {
                                     // cloudCoverLowAltPct: 0, // Not given
                                     // cloudCoverMidAltPct: 0, // Not given
                                     conditionCode: Weather.ConvertWeatherCode(daily?.textNight),
-                                    // humidity 用一整天的数据代替
+                                    // Use the whole-day humidity value instead.
                                     // humidityMax: daily?.humidity, // Not Accurate
                                     // humidityMin: daily?.humidity, // Not Accurate
                                     precipitationAmount: Number.parseFloat(daily?.precip),
@@ -577,7 +576,7 @@ export default class QWeather {
                                     // snowfallAmount: 0, // Not given
                                     // temperatureMax: 0, // Not given
                                     // temperatureMin: 0, // Not given
-                                    // visibility 用一整天的数据代替
+                                    // Use the whole-day visibility value instead.
                                     // visibilityMax: 0, // Not given
                                     // visibilityMin: 0, // Not given
                                     windDirection: Number.parseInt(daily?.wind360Night, 10),
@@ -646,7 +645,7 @@ export default class QWeather {
         const timeStamp = Date.now() / 1000;
         return {
             longitude: this.longitude,
-            providerName: "和风天气",
+            providerName: "QWeather",
             reportedTime: timeStamp,
             latitude: this.latitude,
             expireTime: timeStamp + 60 * 60,
@@ -658,20 +657,20 @@ export default class QWeather {
     }
 
     /**
-     * 创建 WeatherKit 格式污染物对象（airquality/v1/current 数据源）。
+     * Build WeatherKit-style pollutant objects from the airquality/v1/current data source.
      * @link https://dev.qweather.com/docs/airquality/
      * @param {Array<{
      *   code: string,
      *   concentration: { value: number, unit: string },
      *   subIndexes?: Array<{ code: string, aqi: number }>
-     * }>} pollutantsObj - 原始污染物数组。
-     * @param {string} [scaleCode] - 目标指数口径 code（如 cn-mee / us-epa）。
+     * }>} pollutantsObj - Raw pollutant array.
+     * @param {string} [scaleCode] - Target index scale code, such as cn-mee or us-epa.
      * @returns {Array<{
      *   pollutantType: string,
      *   amount: number,
      *   units: string,
      *   index?: number
-     * }>} 转换后的污染物数组。
+     * }>} Converted pollutant array.
      */
     #CreatePollutants(pollutantsObj, scaleCode) {
         Console.info("☑️ CreatePollutants");
@@ -703,10 +702,10 @@ export default class QWeather {
     }
 
     /**
-     * 创建 WeatherKit 格式污染物对象（v7/air/now 与 historical/air 数据源）。
+     * Build WeatherKit-style pollutant objects from v7/air/now and historical/air data sources.
      * @link https://dev.qweather.com/docs/resource/unit/
-     * @param {Object} pollutantsObj - v7 接口返回的污染物键值对象。
-     * @returns {Array<{amount: number, pollutantType: string, units: string}>} 转换后的污染物数组。
+     * @param {Object} pollutantsObj - Pollutant key-value object returned by the v7 API.
+     * @returns {Array<{amount: number, pollutantType: string, units: string}>} Converted pollutant array.
      */
     #CreatePollutantsV7(pollutantsObj) {
         Console.info("☑️ CreatePollutantsV7");
@@ -746,7 +745,7 @@ export default class QWeather {
     }
 
     async CurrentAirQuality(forcePrimaryPollutant = true) {
-        // 判断可用性：当前数据源不支持这个国家/地区
+        // Availability check: this provider does not support the current country or region.
         if (!this.#Config.Availability.AirQuality.includes(this.country)) {
             Console.warn("CurrentAirQuality", `Unsupported country: ${this.country}`);
             return {
@@ -788,7 +787,7 @@ export default class QWeather {
                     Console.info("✅ indexCodeToScale", "EU_EAQI");
                     return EU_EAQI;
                 default:
-                    Console.error("indexCodeToScale", "不支持的code");
+                    Console.error("indexCodeToScale", "Unsupported code");
                     return {};
             }
         };
@@ -875,7 +874,7 @@ export default class QWeather {
             pollutants: [],
         };
 
-        // 判断可用性：当前数据源不支持这个国家/地区
+        // Availability check: this provider does not support the current country or region.
         if (!this.#Config.Availability.AirQuality.includes(this.country)) {
             Console.warn("YesterdayAirQuality", `Unsupported country: ${this.country}`);
             return failedAirQuality;
