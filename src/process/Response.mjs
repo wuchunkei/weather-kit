@@ -1,4 +1,4 @@
-import { Console, Lodash as _, Storage } from "@nsnanocat/util";
+import { Console, Lodash as _, Storage, fetch } from "@nsnanocat/util";
 import database from "../function/database.mjs";
 import setENV from "../function/setENV.mjs";
 import * as flatbuffers from "flatbuffers";
@@ -11,11 +11,24 @@ import IQAir from "../class/IQAir.mjs";
 import Weather from "../class/Weather.mjs";
 import AirQuality from "../class/AirQuality.mjs";
 import patchFlatBufferRootTableField from "../function/patchFlatBufferRootTableField.mjs";
+import HKO from "../class/HKO.mjs";
+
+const ORIGINAL_COUNTRY_HEADER = "X-iRingo-Original-Country";
+const ORIGINAL_STOREFRONT_HEADER = "X-iRingo-Original-Store-Front";
 
 function getHeader(headers, name) {
     const lowerName = name.toLowerCase();
     const entry = Object.entries(headers ?? {}).find(([key]) => key.toLowerCase() === lowerName);
     return entry?.[1];
+}
+
+function setHeader(headers, name, value) {
+    const key = Object.keys(headers).find(key => key.toLowerCase() === name.toLowerCase()) ?? name;
+    headers[key] = value;
+}
+
+function replaceLocaleCountry(url, country) {
+    url.pathname = url.pathname.replace(/^(\/api\/v\d+\/weather\/[^/]*?)(?:-[A-Z]{2})?(\/)/i, (match, prefix, suffix) => `${prefix}-${country}${suffix}`);
 }
 
 const WEATHER_ROOT_FIELD_IDS = {
@@ -47,6 +60,107 @@ function patchWeatherRootFields(rawBody, body, dataSets = []) {
         patchedBody = patchFlatBufferRootTableField(patchedBody, fieldId, encodeDataSetRoot(dataSet, data));
     });
     return patchedBody;
+}
+
+function asUint8Array(bytes) {
+    if (bytes instanceof Uint8Array) return bytes;
+    if (bytes instanceof ArrayBuffer) return new Uint8Array(bytes);
+    if (ArrayBuffer.isView(bytes)) return new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    return new Uint8Array();
+}
+
+function cleanAppleFetchHeaders(headers = {}, country, storefront) {
+    const cleanedHeaders = { ...headers };
+    Object.keys(cleanedHeaders).forEach(key => {
+        switch (key.toLowerCase()) {
+            case "host":
+            case "content-length":
+            case "if-none-match":
+            case ORIGINAL_COUNTRY_HEADER.toLowerCase():
+            case ORIGINAL_STOREFRONT_HEADER.toLowerCase():
+                delete cleanedHeaders[key];
+                break;
+            default:
+                break;
+        }
+    });
+    setHeader(cleanedHeaders, "Accept", "application/vnd.apple.flatbuffer");
+    setHeader(cleanedHeaders, "GeoCountryCode", country);
+    setHeader(cleanedHeaders, "geocountrycode", country);
+    if (storefront) setHeader(cleanedHeaders, "X-Apple-Store-Front", storefront);
+    return cleanedHeaders;
+}
+
+async function FetchAppleWeatherAlerts($request, url, country, storefront) {
+    Console.info("☑️ FetchAppleWeatherAlerts", `country: ${country}`);
+    try {
+        const alertURL = new URL(url.toString());
+        alertURL.searchParams.set("country", country);
+        alertURL.searchParams.set("dataSets", "weatherAlerts");
+        replaceLocaleCountry(alertURL, country);
+
+        const response = await fetch({
+            url: alertURL.toString(),
+            headers: cleanAppleFetchHeaders($request.headers, country, storefront),
+        });
+        if (!response?.ok) throw Error(`status ${response?.status ?? response?.statusCode}`);
+
+        const rawBody = asUint8Array(response.bodyBytes ?? response.body);
+        if (!rawBody.byteLength) throw Error("empty body");
+
+        const body = WeatherKit2.decode(new flatbuffers.ByteBuffer(rawBody), "all");
+        if (!body?.weatherAlerts?.alerts?.length) return undefined;
+        return body.weatherAlerts;
+    } catch (error) {
+        Console.warn("FetchAppleWeatherAlerts", error);
+        return undefined;
+    } finally {
+        Console.info("✅ FetchAppleWeatherAlerts");
+    }
+}
+
+async function FillLocalizedWeatherAlerts($request, url, body, parameters, Configs) {
+    if (!parameters.dataSets?.includes("weatherAlerts")) return false;
+    if (body?.weatherAlerts?.alerts?.length) return false;
+
+    const originalCountry = getHeader($request.headers, ORIGINAL_COUNTRY_HEADER);
+    if (!originalCountry || originalCountry === url.searchParams.get("country")) return false;
+
+    const originalStorefront = getHeader($request.headers, ORIGINAL_STOREFRONT_HEADER) ?? Configs?.Storefront?.[originalCountry];
+    const appleAlerts = await FetchAppleWeatherAlerts($request, url, originalCountry, originalStorefront);
+    if (appleAlerts?.alerts?.length) {
+        body.weatherAlerts = appleAlerts;
+        return true;
+    }
+
+    const hkoAlerts = await new HKO({ ...parameters, country: originalCountry }).WeatherAlerts();
+    if (hkoAlerts?.alerts?.length) {
+        body.weatherAlerts = hkoAlerts;
+        return true;
+    }
+
+    return false;
+}
+
+function shouldPatchInjectedDataSet(dataSet, Settings, country) {
+    switch (dataSet) {
+        case "airQuality":
+            return (
+                Settings?.AirQuality?.Current?.Pollutants?.Provider !== "WeatherKit" ||
+                Settings?.AirQuality?.Current?.Index?.Provider !== "WeatherKit" ||
+                Settings?.AirQuality?.Comparison?.ReplaceWhenCurrentChange ||
+                Settings?.AirQuality?.Comparison?.Yesterday?.PollutantsProvider !== "WeatherKit" ||
+                Settings?.AirQuality?.Comparison?.Yesterday?.IndexProvider !== "WeatherKit"
+            );
+        case "currentWeather":
+        case "forecastDaily":
+        case "forecastHourly":
+            return Settings?.Weather?.Provider !== "WeatherKit" && isWeatherReplaceEnabled(Settings, country);
+        case "forecastNextHour":
+            return Settings?.NextHour?.Provider !== "WeatherKit";
+        default:
+            return false;
+    }
 }
 
 /***************** Processing *****************/
@@ -124,7 +238,8 @@ export async function Response($request, $response) {
                             if (/^\/api\/v[23]\/weather\//.test(url.pathname)) {
                                 body = WeatherKit2.decode(ByteBuffer, "all");
                                 const parameters = parseWeatherKitURL(url);
-                                parameters.country = getHeader($request.headers, "X-iRingo-Original-Country") ?? parameters.country;
+                                parameters.country = getHeader($request.headers, ORIGINAL_COUNTRY_HEADER) ?? parameters.country;
+                                const changedDataSets = new Set();
                                 const enviroments = {
                                     openWeather: new OpenWeather(parameters, Settings?.API?.OpenWeather?.Token, Settings?.API?.OpenWeather?.URL),
                                     qWeather: new QWeather(parameters, Settings?.API?.QWeather?.Token, Settings?.API?.QWeather?.Host),
@@ -138,22 +253,27 @@ export async function Response($request, $response) {
                                         switch (dataSet) {
                                             case "airQuality": {
                                                 body.airQuality = await InjectAirQuality(body.airQuality, Settings, Caches, enviroments);
+                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
                                                 break;
                                             }
                                             case "currentWeather": {
                                                 body.currentWeather = await InjectCurrentWeather(body.currentWeather, Settings, enviroments);
+                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
                                                 break;
                                             }
                                             case "forecastDaily": {
                                                 body.forecastDaily = await InjectForecastDaily(body.forecastDaily, Settings, enviroments);
+                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
                                                 break;
                                             }
                                             case "forecastHourly": {
                                                 body.forecastHourly = await InjectForecastHourly(body.forecastHourly, Settings, enviroments);
+                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
                                                 break;
                                             }
                                             case "forecastNextHour": {
                                                 body.forecastNextHour = await InjectForecastNextHour(body.forecastNextHour, Settings, enviroments);
+                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
                                                 break;
                                             }
                                             default:
@@ -161,8 +281,9 @@ export async function Response($request, $response) {
                                         }
                                     }),
                                 );
+                                if (await FillLocalizedWeatherAlerts($request, url, body, parameters, Configs)) changedDataSets.add("weatherAlerts");
                                 try {
-                                    rawBody = patchWeatherRootFields(rawBody, body, parameters.dataSets);
+                                    rawBody = patchWeatherRootFields(rawBody, body, [...changedDataSets]);
                                 } catch (error) {
                                     Console.warn("patchWeatherRootFields", error);
                                     const Builder = new flatbuffers.Builder();

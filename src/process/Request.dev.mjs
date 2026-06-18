@@ -3,6 +3,7 @@ import database from "../function/database.mjs";
 import setENV from "../function/setENV.mjs";
 
 const ORIGINAL_COUNTRY_HEADER = "X-iRingo-Original-Country";
+const ORIGINAL_STOREFRONT_HEADER = "X-iRingo-Original-Store-Front";
 const VIRTUAL_COUNTRY = "US";
 const VIRTUAL_STOREFRONT = "143441";
 const CONFIGURABLE_DATASETS = database.WeatherKit.Settings.DataSets;
@@ -35,8 +36,10 @@ function ApplyVirtualCountry($request, url) {
     setHeader(headers, "geocountrycode", VIRTUAL_COUNTRY);
 
     const storefrontKey = Object.keys(headers).find(key => key.toLowerCase() === "x-apple-store-front");
-    if (storefrontKey) headers[storefrontKey] = String(headers[storefrontKey]).replace(/^\d+/, VIRTUAL_STOREFRONT);
-    else setHeader(headers, "X-Apple-Store-Front", VIRTUAL_STOREFRONT);
+    if (storefrontKey) {
+        setHeader(headers, ORIGINAL_STOREFRONT_HEADER, headers[storefrontKey]);
+        headers[storefrontKey] = String(headers[storefrontKey]).replace(/^\d+/, VIRTUAL_STOREFRONT);
+    } else setHeader(headers, "X-Apple-Store-Front", VIRTUAL_STOREFRONT);
 
     url.searchParams.set("country", VIRTUAL_COUNTRY);
     replaceLocaleCountry(url, VIRTUAL_COUNTRY);

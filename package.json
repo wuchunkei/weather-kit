@@ -1,6 +1,6 @@
 {
     "name": "@nsringo/weatherkit",
-    "version": "3.1.3",
+    "version": "3.1.4",
     "organizationName": " iRingo",
     "displayName": " iRingo: 🌤 WeatherKit",
     "description": "iOS 18 & macOS 15 & watchOS 11\n1.解锁全部天气功能\n2.替换空气质量数据\n3.添加下一小时降水数据\n4.添加天气数据",
