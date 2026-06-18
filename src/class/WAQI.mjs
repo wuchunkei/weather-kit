@@ -1,6 +1,5 @@
 import { Console, fetch } from "@nsnanocat/util";
 import AirQuality from "../class/AirQuality.mjs";
-import providerNameToLogo from "../function/providerNameToLogo.mjs";
 
 export default class WAQI {
     constructor(parameters, token) {
@@ -67,7 +66,6 @@ export default class WAQI {
                                     language: `${this.language}-${this.country}`,
                                     latitude: body?.d?.[0]?.geo?.[0],
                                     longitude: body?.d?.[0]?.geo?.[1],
-                                    providerLogo: providerNameToLogo("WAQI", this.version),
                                     providerName: `World Air Quality Index Project\n监测站：${body?.d?.[0]?.nna}`,
                                     readTime: timeStamp,
                                     reportedTime: body?.d?.[0]?.t,
@@ -101,7 +99,6 @@ export default class WAQI {
                                     latitude: body?.data?.stations?.[0]?.geo?.[0],
                                     longitude: body?.data?.stations?.[0]?.geo?.[1],
                                     expireTime: timeStamp + 60 * 60,
-                                    providerLogo: providerNameToLogo("WAQI", this.version),
                                     providerName: `World Air Quality Index Project\n监测站：${body?.data?.stations?.[0]?.name}`,
                                     readTime: timeStamp,
                                     reportedTime: (new Date(body?.data?.stations?.[0]?.utime).getTime() / 1000) | 0,
@@ -202,7 +199,6 @@ export default class WAQI {
                                             language: `${this.language}-${this.country}`,
                                             latitude: body?.rxs?.obs?.[0]?.msg?.city?.geo?.[0],
                                             longitude: body?.rxs?.obs?.[0]?.msg?.city?.geo?.[1],
-                                            providerLogo: providerNameToLogo("WAQI", this.version),
                                             providerName: `World Air Quality Index Project\n监测站：${body?.rxs?.obs?.[0]?.msg?.city?.name}`,
                                             readTime: timeStamp,
                                             reportedTime: body?.rxs?.obs?.[0]?.msg?.time?.v,
@@ -260,7 +256,6 @@ export default class WAQI {
                             language: `${this.language}-${this.country}`,
                             latitude: body?.data?.city?.geo?.[0],
                             longitude: body?.data?.city?.geo?.[1],
-                            providerLogo: providerNameToLogo("WAQI", this.version),
                             providerName: `World Air Quality Index Project\n监测站：${body?.data?.city?.name}`,
                             readTime: timeStamp,
                             reportedTime: body?.data?.time?.v,

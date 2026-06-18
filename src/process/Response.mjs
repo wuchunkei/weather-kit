@@ -4,7 +4,6 @@ import setENV from "../function/setENV.mjs";
 import * as flatbuffers from "flatbuffers";
 import WeatherKit2 from "../class/WeatherKit2.mjs";
 import parseWeatherKitURL from "../function/parseWeatherKitURL.mjs";
-import providerNameToLogo from "../function/providerNameToLogo.mjs";
 import OpenWeather from "../class/OpenWeather.mjs";
 import QWeather from "../class/QWeather.mjs";
 import WAQI from "../class/WAQI.mjs";
@@ -103,22 +102,18 @@ export async function Response($request, $response) {
                                             }
                                             case "currentWeather": {
                                                 body.currentWeather = await InjectCurrentWeather(body.currentWeather, Settings, enviroments);
-                                                if (body?.currentWeather?.metadata?.providerName && !body?.currentWeather?.metadata?.providerLogo) body.currentWeather.metadata.providerLogo = providerNameToLogo(body?.currentWeather?.metadata?.providerName, "v2");
                                                 break;
                                             }
                                             case "forecastDaily": {
                                                 body.forecastDaily = await InjectForecastDaily(body.forecastDaily, Settings, enviroments);
-                                                if (body?.forecastDaily?.metadata?.providerName && !body?.forecastDaily?.metadata?.providerLogo) body.forecastDaily.metadata.providerLogo = providerNameToLogo(body?.forecastDaily?.metadata?.providerName, "v2");
                                                 break;
                                             }
                                             case "forecastHourly": {
                                                 body.forecastHourly = await InjectForecastHourly(body.forecastHourly, Settings, enviroments);
-                                                if (body?.forecastHourly?.metadata?.providerName && !body?.forecastHourly?.metadata?.providerLogo) body.forecastHourly.metadata.providerLogo = providerNameToLogo(body?.forecastHourly?.metadata?.providerName, "v2");
                                                 break;
                                             }
                                             case "forecastNextHour": {
                                                 body.forecastNextHour = await InjectForecastNextHour(body.forecastNextHour, Settings, enviroments);
-                                                if (body?.forecastNextHour?.metadata?.providerName && !body?.forecastNextHour?.metadata?.providerLogo) body.forecastNextHour.metadata.providerLogo = providerNameToLogo(body?.forecastNextHour?.metadata?.providerName, "v2");
                                                 break;
                                             }
                                             default:
@@ -344,23 +339,16 @@ async function InjectAirQuality(airQuality, Settings, Caches, enviroments) {
         ...(needInjectComparison && comparisonMetadata?.providerName && !comparisonMetadata.temporarilyUnavailable ? [`对比昨日：\n${comparisonMetadata.providerName}`] : []),
     ];
 
-    // Step6. 选取实际生效的 metadata，沿用注入来源自带的 logo
-    const logoMetadata = [
-        ...(needPollutants ? [pollutantMetadata] : []),
-        ...(needInjectIndex ? [indexMetadata] : []),
-        ...(needInjectComparison ? [comparisonMetadata] : []),
-        weatherKitMetadata,
-    ].find(metadata => metadata?.providerName && !metadata.temporarilyUnavailable);
-    const providerLogo = logoMetadata?.providerLogo || providerNameToLogo(logoMetadata?.providerName, "v2");
+    // Step6. 合并 metadata，并移除 providerLogo，避免 Weather footer 尝试显示自定义图标
+    const { providerLogo, ...metadata } = (airQuality?.metadata ? airQuality.metadata : injectedPollutants?.metadata) ?? {};
 
     // Step7. 合并输出：优先使用可用注入结果，并统一 metadata / pollutants / previousDayComparison
     airQuality = {
         ...airQuality,
         ...(injectedIndex?.metadata && !injectedIndex.metadata.temporarilyUnavailable ? injectedIndex : {}),
         metadata: {
-            ...(airQuality?.metadata ? airQuality.metadata : injectedPollutants?.metadata),
+            ...metadata,
             providerName: providers.join("\n"),
-            ...(providerLogo ? { providerLogo } : {}),
         },
         pollutants: AirQuality.ConvertPollutants(airQuality, injectedPollutants, needInjectIndex, injectedIndex, Settings) ?? [],
         previousDayComparison: injectedComparison?.previousDayComparison ?? AirQuality.Config.CompareCategoryIndexes.UNKNOWN,

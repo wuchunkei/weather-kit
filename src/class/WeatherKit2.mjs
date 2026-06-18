@@ -16,7 +16,7 @@ export default class WeatherKit2 {
                 builder.createString(data?.metadata?.language),
                 data?.metadata?.latitude,
                 data?.metadata?.longitude,
-                builder.createString(data?.metadata?.providerLogo),
+                builder.createString(undefined),
                 builder.createString(data?.metadata?.providerName),
                 data?.metadata?.readTime,
                 data?.metadata?.reportedTime,

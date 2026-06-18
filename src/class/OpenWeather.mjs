@@ -1,7 +1,6 @@
 import { Console, fetch } from "@nsnanocat/util";
 import Weather from "./Weather.mjs";
 import ForecastNextHour from "./ForecastNextHour.mjs";
-import providerNameToLogo from "../function/providerNameToLogo.mjs";
 
 const DEFAULT_ENDPOINT = "https://api.openweathermap.org/data/4.0/onecall";
 
@@ -85,7 +84,6 @@ export default class OpenWeather {
             language: this.language,
             latitude: OpenWeather.#Number(body?.lat, this.latitude),
             longitude: OpenWeather.#Number(body?.lon, this.longitude),
-            providerLogo: providerNameToLogo("OpenWeather", this.version),
             providerName: "OpenWeather",
             readTime: timeStamp,
             reportedTime: reportedTime ?? body?.data?.[0]?.dt ?? timeStamp,

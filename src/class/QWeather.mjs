@@ -2,7 +2,6 @@ import { Console, fetch, Lodash as _, time } from "@nsnanocat/util";
 import Weather from "./Weather.mjs";
 import AirQuality from "../class/AirQuality.mjs";
 import ForecastNextHour from "./ForecastNextHour.mjs";
-import providerNameToLogo from "../function/providerNameToLogo.mjs";
 
 export default class QWeather {
     constructor(parameters, token, host = "devapi.qweather.com") {
@@ -185,7 +184,6 @@ export default class QWeather {
                             language: "zh-CN", // `${this.language}-${this.country}`,
                             latitude: this.latitude,
                             longitude: this.longitude,
-                            providerLogo: providerNameToLogo("和风天气", this.version),
                             providerName: "和风天气",
                             readTime: timeStamp,
                             reportedTime: (new Date(body?.now?.pubTime).getTime() / 1000) | 0,
@@ -245,7 +243,6 @@ export default class QWeather {
                             language: "zh-CN", // `${this.language}-${this.country}`,
                             latitude: this.latitude,
                             longitude: this.longitude,
-                            providerLogo: providerNameToLogo("和风天气", this.version),
                             providerName: "和风天气",
                             readTime: timeStamp,
                             reportedTime: (new Date(body?.now?.pubTime).getTime() / 1000) | 0,
@@ -341,7 +338,6 @@ export default class QWeather {
                             language: "zh-CN", // `${this.language}-${this.country}`, // body?.lang,
                             latitude: this.latitude,
                             longitude: this.longitude,
-                            providerLogo: providerNameToLogo("和风天气", this.version),
                             providerName: "和风天气",
                             readTime: timeStamp,
                             reportedTime: timeStamp,
@@ -415,7 +411,6 @@ export default class QWeather {
                             language: "zh-CN", // `${this.language}-${this.country}`, // body?.lang,
                             latitude: this.latitude,
                             longitude: this.longitude,
-                            providerLogo: providerNameToLogo("和风天气", this.version),
                             providerName: "和风天气",
                             readTime: timeStamp,
                             reportedTime: new Date(body?.updateTime),
@@ -492,7 +487,6 @@ export default class QWeather {
                         language: "zh-CN", // `${this.language}-${this.country}`, // body?.lang,
                         latitude: this.latitude,
                         longitude: this.longitude,
-                        providerLogo: providerNameToLogo("和风天气", this.version),
                         providerName: "和风天气",
                         readTime: timeStamp,
                         reportedTime: new Date(body?.updateTime),
@@ -653,7 +647,6 @@ export default class QWeather {
         return {
             longitude: this.longitude,
             providerName: "和风天气",
-            providerLogo: providerNameToLogo("和风天气", this.version),
             reportedTime: timeStamp,
             latitude: this.latitude,
             expireTime: timeStamp + 60 * 60,

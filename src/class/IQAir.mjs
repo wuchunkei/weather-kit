@@ -1,6 +1,5 @@
 import { Console, fetch } from "@nsnanocat/util";
 import AirQuality from "../class/AirQuality.mjs";
-import providerNameToLogo from "../function/providerNameToLogo.mjs";
 
 export default class IQAir {
     constructor(parameters, token, url = "https://api.airvisual.com/v2/nearest_city") {
@@ -16,6 +15,8 @@ export default class IQAir {
         this.longitude = parameters.longitude;
         this.country = parameters.country;
     }
+
+    #currentAirQuality;
 
     static Pollutants = {
         p2: "PM2_5",
@@ -59,11 +60,13 @@ export default class IQAir {
         const data = body?.data;
         const pollution = data?.current?.pollution;
         const index = Number.parseInt(pollution?.aqius, 10);
-        const categoryIndex = AirQuality.CategoryIndex(index, IQAir.Scale.categories);
 
-        if (body?.status !== "success" || !Number.isFinite(index) || categoryIndex < 0) {
+        if (body?.status !== "success" || !Number.isFinite(index)) {
             return IQAir.Unavailable(parameters, body?.status || "unavailable");
         }
+
+        const categoryIndex = AirQuality.CategoryIndex(index, IQAir.Scale.categories);
+        if (categoryIndex < 0) return IQAir.Unavailable(parameters, "invalid_aqi");
 
         const [longitude, latitude] = data?.location?.coordinates ?? [];
         const stationName = data?.name || data?.city;
@@ -76,7 +79,6 @@ export default class IQAir {
                 language: `${parameters.language}-${parameters.country}`,
                 latitude: Number.parseFloat(latitude ?? parameters.latitude),
                 longitude: Number.parseFloat(longitude ?? parameters.longitude),
-                providerLogo: providerNameToLogo("IQAir", parameters.version),
                 providerName,
                 readTime: timeStamp,
                 reportedTime: IQAir.#ToUnixTime(pollution?.ts, timeStamp),
@@ -102,7 +104,6 @@ export default class IQAir {
                 language: `${parameters.language}-${parameters.country}`,
                 latitude: parameters.latitude,
                 longitude: parameters.longitude,
-                providerLogo: providerNameToLogo("IQAir", parameters.version),
                 providerName: `IQAir${reason ? `\n${reason}` : ""}`,
                 readTime: timeStamp,
                 reportedTime: timeStamp,
@@ -116,10 +117,16 @@ export default class IQAir {
 
     async CurrentAirQuality() {
         Console.info("☑️ CurrentAirQuality");
+        if (this.#currentAirQuality) {
+            Console.info("✅ CurrentAirQuality", "Using cache");
+            return this.#currentAirQuality;
+        }
+
         if (!this.token) {
             Console.warn("IQAir", "Missing API token");
             Console.info("✅ CurrentAirQuality");
-            return IQAir.Unavailable(this, "missing_api_key");
+            this.#currentAirQuality = IQAir.Unavailable(this, "missing_api_key");
+            return this.#currentAirQuality;
         }
 
         const url = new URL(this.endpoint);
@@ -135,8 +142,9 @@ export default class IQAir {
             Console.warn("IQAir.CurrentAirQuality", error);
             airQuality = IQAir.Unavailable(this, "request_failed");
         } finally {
+            this.#currentAirQuality = airQuality;
             Console.info("✅ CurrentAirQuality");
         }
-        return airQuality;
+        return this.#currentAirQuality;
     }
 }
