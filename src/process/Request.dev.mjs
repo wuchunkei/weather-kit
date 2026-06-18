@@ -47,13 +47,16 @@ function ApplyVirtualCountry($request, url) {
 
 function ApplyAvailabilityVirtualCountry($request, url, Settings) {
     if (Settings?.NextHour?.Provider === "WeatherKit") return;
-
-    ApplyVirtualCountry($request, url);
+    Console.info("Preserve original country for availability; the local availability response exposes forecastNextHour.");
 }
 
 function ApplyNextHourVirtualCountry($request, url, Settings, dataSets) {
     if (Settings?.NextHour?.Provider === "WeatherKit") return;
     if (!dataSets?.includes("forecastNextHour")) return;
+    if (dataSets.length !== 1) {
+        Console.info("Preserve original country for mixed WeatherKit data sets.");
+        return;
+    }
 
     ApplyVirtualCountry($request, url);
 }

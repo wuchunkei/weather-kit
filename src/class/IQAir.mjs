@@ -37,6 +37,7 @@ export default class IQAir {
     };
 
     static Scale = AirQuality.Config.Scales.EPA_NowCast;
+    static CNScale = AirQuality.Config.Scales.HJ6332012;
 
     static #ToUnixTime(value, fallback) {
         const timestamp = (new Date(value).getTime() / 1000) | 0;
@@ -59,18 +60,31 @@ export default class IQAir {
         const timeStamp = (Date.now() / 1000) | 0;
         const data = body?.data;
         const pollution = data?.current?.pollution;
-        const index = Number.parseInt(pollution?.aqius, 10);
+        const usIndex = Number.parseInt(pollution?.aqius, 10);
+        const cnIndex = Number.parseInt(pollution?.aqicn, 10);
+        const preferCNIndex = parameters?.country === "CN";
+        const useCNIndex = Number.isFinite(cnIndex) && (preferCNIndex || !Number.isFinite(usIndex));
+        const index = useCNIndex ? cnIndex : usIndex;
+        const scale = useCNIndex ? IQAir.CNScale : IQAir.Scale;
 
-        if (body?.status !== "success" || !Number.isFinite(index)) {
+        if (body?.status !== "success") {
+            Console.warn("IQAir.FromBody", `Unexpected status: ${body?.status || "unavailable"}`);
             return IQAir.Unavailable(parameters, body?.status || "unavailable");
         }
 
-        const categoryIndex = AirQuality.CategoryIndex(index, IQAir.Scale.categories);
+        if (!Number.isFinite(index)) {
+            Console.warn("IQAir.FromBody", "Missing aqius/aqicn index");
+            return IQAir.Unavailable(parameters, "missing_aqi");
+        }
+
+        const categoryIndex = AirQuality.CategoryIndex(index, scale.categories);
         if (categoryIndex < 0) return IQAir.Unavailable(parameters, "invalid_aqi");
 
         const [longitude, latitude] = data?.location?.coordinates ?? [];
         const stationName = data?.name || data?.city;
         const providerName = ["IQAir", stationName ? `Station: ${stationName}` : undefined, data?.city ? `City: ${data.city}` : undefined].filter(Boolean).join("\n");
+        const pollutants = IQAir.#CreatePollutants(pollution, data?.units);
+        if (pollutants.length === 0) Console.warn("IQAir.FromBody", "AQI index is available, but pollutant concentrations are unavailable");
 
         return {
             metadata: {
@@ -87,11 +101,11 @@ export default class IQAir {
             },
             categoryIndex,
             index,
-            isSignificant: categoryIndex >= IQAir.Scale.categories.significantIndex,
-            pollutants: IQAir.#CreatePollutants(pollution, data?.units),
+            isSignificant: categoryIndex >= scale.categories.significantIndex,
+            pollutants,
             previousDayComparison: AirQuality.Config.CompareCategoryIndexes.UNKNOWN,
-            primaryPollutant: IQAir.Pollutants[pollution?.mainus] || "NOT_AVAILABLE",
-            scale: AirQuality.ToWeatherKitScale(IQAir.Scale.weatherKitScale),
+            primaryPollutant: IQAir.Pollutants[useCNIndex ? pollution?.maincn : pollution?.mainus] || "NOT_AVAILABLE",
+            scale: AirQuality.ToWeatherKitScale(scale.weatherKitScale),
         };
     }
 
@@ -136,7 +150,10 @@ export default class IQAir {
 
         let airQuality;
         try {
-            const body = await fetch({ url: url.toString(), headers: this.headers }).then(response => JSON.parse(response?.body ?? "{}"));
+            const body = await fetch({ url: url.toString(), headers: this.headers }).then(response => {
+                Console.info("IQAir.CurrentAirQuality", `status: ${response?.status ?? response?.statusCode ?? "unknown"}`);
+                return JSON.parse(response?.body ?? "{}");
+            });
             airQuality = IQAir.FromBody(body, this);
         } catch (error) {
             Console.warn("IQAir.CurrentAirQuality", error);

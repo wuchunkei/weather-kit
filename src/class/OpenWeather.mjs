@@ -1,4 +1,4 @@
-import { Console, fetch } from "@nsnanocat/util";
+import { Console, Storage, fetch } from "@nsnanocat/util";
 import Weather from "./Weather.mjs";
 import ForecastNextHour from "./ForecastNextHour.mjs";
 
@@ -19,6 +19,10 @@ export default class OpenWeather {
     }
 
     #cache = {};
+    static CacheKey = "iRingo.WeatherKit.OpenWeather.Cache";
+    static CooldownKey = "iRingo.WeatherKit.OpenWeather.Cooldown";
+    static CooldownSeconds = 30 * 60;
+    static MaxCacheEntries = 80;
 
     static #NormalizeEndpoint(endpoint = DEFAULT_ENDPOINT) {
         const normalized = endpoint || DEFAULT_ENDPOINT;
@@ -54,6 +58,39 @@ export default class OpenWeather {
         return url.toString();
     }
 
+    #PersistentCacheKey(path) {
+        const latitude = OpenWeather.#Number(this.latitude)?.toFixed(2) ?? this.latitude;
+        const longitude = OpenWeather.#Number(this.longitude)?.toFixed(2) ?? this.longitude;
+        return [this.endpoint, path, latitude, longitude, this.language].join("|");
+    }
+
+    static #CacheTTL(path) {
+        switch (path) {
+            case "current":
+            case "timeline/1min":
+                return 5 * 60;
+            case "timeline/1h":
+                return 15 * 60;
+            case "timeline/1day":
+                return 60 * 60;
+            default:
+                return 10 * 60;
+        }
+    }
+
+    static #ReadPersistentCache(now) {
+        const cache = Storage.getItem(OpenWeather.CacheKey, {});
+        if (!cache || typeof cache !== "object") return {};
+        return Object.fromEntries(Object.entries(cache).filter(([, entry]) => entry?.expireTime > now));
+    }
+
+    static #WritePersistentCache(cache) {
+        const entries = Object.entries(cache)
+            .sort(([, left], [, right]) => (right?.expireTime ?? 0) - (left?.expireTime ?? 0))
+            .slice(0, OpenWeather.MaxCacheEntries);
+        Storage.setItem(OpenWeather.CacheKey, Object.fromEntries(entries));
+    }
+
     async #Fetch(path) {
         Console.info("☑️ OpenWeather.Fetch", `path: ${path}`);
         if (this.#cache[path]) {
@@ -61,12 +98,35 @@ export default class OpenWeather {
             return this.#cache[path];
         }
 
+        const now = Math.trunc(Date.now() / 1000);
+        const cacheKey = this.#PersistentCacheKey(path);
+        const persistentCache = OpenWeather.#ReadPersistentCache(now);
+        if (persistentCache[cacheKey]?.body) {
+            Console.info("✅ OpenWeather.Fetch", "Using persistent cache");
+            this.#cache[path] = persistentCache[cacheKey].body;
+            return this.#cache[path];
+        }
+
+        const cooldown = Storage.getItem(OpenWeather.CooldownKey, {});
+        if (cooldown?.until > now) {
+            Console.warn("OpenWeather.Fetch", `Cooling down after ${cooldown.reason || "provider error"} until ${cooldown.until}`);
+            Console.info("✅ OpenWeather.Fetch");
+            return {};
+        }
+
         const request = { url: this.#BuildURL(path) };
         try {
             const body = await fetch(request).then(response => JSON.parse(response?.body ?? "{}"));
+            if (`${body?.cod}` === "429") {
+                Storage.setItem(OpenWeather.CooldownKey, { until: now + OpenWeather.CooldownSeconds, reason: "429" });
+                throw Error(JSON.stringify(body));
+            }
             if (body?.cod && `${body.cod}` !== "200") throw Error(JSON.stringify(body));
             if (!Array.isArray(body?.data)) throw Error(JSON.stringify(body ?? {}));
+            Storage.setItem(OpenWeather.CooldownKey, { until: 0 });
             this.#cache[path] = body;
+            persistentCache[cacheKey] = { expireTime: now + OpenWeather.#CacheTTL(path), body };
+            OpenWeather.#WritePersistentCache(persistentCache);
             return body;
         } catch (error) {
             Console.error(`OpenWeather.Fetch: ${error}`);

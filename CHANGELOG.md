@@ -5,6 +5,11 @@
   * Fixed merged air-quality metadata so an available external AQI result can override Apple `temporarilyUnavailable` metadata instead of still showing as unavailable.
   * Made weather and air-quality provider clients lazy-loaded, so QWeather is not initialized unless a selected feature actually needs it.
   * Let the built-in Calculate mode fall back to an already available provider AQI index when no pollutant concentrations are available.
+  * Prefer IQAir `aqicn` with the HJ6332012 scale when the original WeatherKit request country is mainland China.
+  * Added a short OpenWeather cooldown after `429` responses to avoid repeated provider calls keeping Weather in a loading state.
+  * Added persistent OpenWeather response caching to reduce One Call 4.0 quota usage and avoid repeated top loading churn.
+  * Preserved the original WeatherKit country for availability and mixed data-set requests, so Apple's domestic AQI map bubble can keep using its own regional data path.
+  * Limited next-hour `US` virtualization to isolated `forecastNextHour` requests instead of full WeatherKit requests that also contain AQI data.
   * Rebuilt from the 3.1.5 stable baseline without `weather-map2` map probing, `airQualityScale` interception, or extra Apple air-quality refetches to reduce Weather app loading churn.
 
 ## 3.1.5
