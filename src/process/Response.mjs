@@ -1,4 +1,4 @@
-import { Console, Lodash as _, Storage, fetch } from "@nsnanocat/util";
+import { Console, Lodash as _, fetch } from "@nsnanocat/util";
 import database from "../function/database.mjs";
 import setENV from "../function/setENV.mjs";
 import * as flatbuffers from "flatbuffers";
@@ -6,10 +6,7 @@ import WeatherKit2 from "../class/WeatherKit2.mjs";
 import parseWeatherKitURL from "../function/parseWeatherKitURL.mjs";
 import OpenWeather from "../class/OpenWeather.mjs";
 import QWeather from "../class/QWeather.mjs";
-import WAQI from "../class/WAQI.mjs";
-import IQAir from "../class/IQAir.mjs";
 import Weather from "../class/Weather.mjs";
-import AirQuality from "../class/AirQuality.mjs";
 import patchFlatBufferRootTableField from "../function/patchFlatBufferRootTableField.mjs";
 import HKO from "../class/HKO.mjs";
 
@@ -145,13 +142,7 @@ async function FillLocalizedWeatherAlerts($request, url, body, parameters, Confi
 function shouldPatchInjectedDataSet(dataSet, Settings, country) {
     switch (dataSet) {
         case "airQuality":
-            return (
-                Settings?.AirQuality?.Current?.Pollutants?.Provider !== "WeatherKit" ||
-                Settings?.AirQuality?.Current?.Index?.Provider !== "WeatherKit" ||
-                Settings?.AirQuality?.Comparison?.ReplaceWhenCurrentChange ||
-                Settings?.AirQuality?.Comparison?.Yesterday?.PollutantsProvider !== "WeatherKit" ||
-                Settings?.AirQuality?.Comparison?.Yesterday?.IndexProvider !== "WeatherKit"
-            );
+            return false;
         case "currentWeather":
         case "forecastDaily":
         case "forecastHourly":
@@ -243,8 +234,6 @@ export async function Response($request, $response) {
                                 const enviroments = {
                                     openWeather: new OpenWeather(parameters, Settings?.API?.OpenWeather?.Token, Settings?.API?.OpenWeather?.URL),
                                     qWeather: new QWeather(parameters, Settings?.API?.QWeather?.Token, Settings?.API?.QWeather?.Host),
-                                    waqi: new WAQI(parameters, Settings?.API?.WAQI?.Token),
-                                    iqAir: new IQAir(parameters, Settings?.API?.IQAir?.Token, Settings?.API?.IQAir?.URL),
                                     country: parameters.country,
                                 };
 
@@ -252,8 +241,6 @@ export async function Response($request, $response) {
                                     parameters.dataSets.map(async dataSet => {
                                         switch (dataSet) {
                                             case "airQuality": {
-                                                body.airQuality = await InjectAirQuality(body.airQuality, Settings, Caches, enviroments);
-                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
                                                 break;
                                             }
                                             case "currentWeather": {
@@ -336,6 +323,7 @@ async function InjectCurrentWeather(currentWeather, Settings, enviroments) {
             break;
         case "OpenWeather": {
             newCurrentWeather = await enviroments.openWeather.WeatherNow();
+            if (!hasAvailableProviderData(newCurrentWeather)) newCurrentWeather = await FetchOpenWeatherFallback("WeatherNow", Settings?.Weather?.Fallback?.Provider, enviroments, "InjectCurrentWeather");
             break;
         }
         case "QWeather": {
@@ -372,6 +360,7 @@ async function InjectForecastDaily(forecastDaily, Settings, enviroments) {
             break;
         case "OpenWeather": {
             newForecastDaily = await enviroments.openWeather.Daily();
+            if (!hasAvailableProviderData(newForecastDaily)) newForecastDaily = await FetchOpenWeatherFallback("Daily", Settings?.Weather?.Fallback?.Provider, enviroments, "InjectForecastDaily");
             break;
         }
         case "QWeather": {
@@ -408,6 +397,7 @@ async function InjectForecastHourly(forecastHourly, Settings, enviroments) {
             break;
         case "OpenWeather": {
             newForecastHourly = await enviroments.openWeather.Hourly();
+            if (!hasAvailableProviderData(newForecastHourly)) newForecastHourly = await FetchOpenWeatherFallback("Hourly", Settings?.Weather?.Fallback?.Provider, enviroments, "InjectForecastHourly");
             break;
         }
         case "QWeather": {
@@ -444,6 +434,7 @@ async function InjectForecastNextHour(forecastNextHour, Settings, enviroments) {
             break;
         case "OpenWeather": {
             newForecastNextHour = await enviroments.openWeather.Minutely();
+            if (!hasAvailableProviderData(newForecastNextHour)) newForecastNextHour = await FetchOpenWeatherFallback("Minutely", Settings?.NextHour?.Fallback?.Provider, enviroments, "InjectForecastNextHour");
             break;
         }
         case "QWeather": {
@@ -462,98 +453,6 @@ async function InjectForecastNextHour(forecastNextHour, Settings, enviroments) {
     return forecastNextHour;
 }
 
-/**
- * Inject and merge air-quality data, including pollutants, indexes, and yesterday comparison.
- * @param {any} airQuality - Original WeatherKit air-quality object.
- * @param {import('../types').Settings} Settings - Settings object.
- * @param {any} Caches - Cache object.
- * @param {any} enviroments - Provider instances and request context.
- * @returns {Promise<any>} Merged air-quality object.
- */
-async function InjectAirQuality(airQuality, Settings, Caches, enviroments) {
-    // Step 1. Normalize pollutant units.
-    airQuality = AirQuality.FixPollutantsUnits(airQuality);
-
-    // Step 2. Check whether original pollutants are empty and inject them if needed.
-    const isPollutantEmpty = !Array.isArray(airQuality?.pollutants) || airQuality.pollutants.length === 0;
-    const pollutantProvider = Settings?.AirQuality?.Current?.Pollutants?.Provider ?? "QWeather";
-    const injectedPollutants = isPollutantEmpty ? await InjectPollutants(airQuality, Settings, enviroments) : airQuality;
-    const needPollutants = pollutantProvider !== "WeatherKit" && isPollutantEmpty && !!(injectedPollutants?.metadata && !injectedPollutants.metadata.temporarilyUnavailable);
-
-    // Step 3. Decide whether to inject AQI indexes according to pollutant availability and replacement settings.
-    const indexProvider = Settings?.AirQuality?.Current?.Index?.Provider ?? "Calculate";
-    const indexSource = injectedPollutants ?? airQuality;
-    const isIndexUnavailable = airQuality?.metadata?.temporarilyUnavailable || !Number.isFinite(Number(airQuality?.index)) || Number(airQuality?.index) < 0;
-    const needInjectIndex = indexProvider !== "WeatherKit" && (needPollutants || isIndexUnavailable || Settings?.AirQuality?.Current?.Index?.Replace?.includes(AirQuality.GetNameFromScale(airQuality?.scale)));
-    const injectedIndex = needInjectIndex ? await InjectIndex(indexSource, Settings, enviroments) : indexSource;
-
-    // Step 4. Decide whether yesterday comparison should be recalculated, and inject it when unknown.
-    const weatherKitComparison = airQuality?.previousDayComparison ?? AirQuality.Config.CompareCategoryIndexes.UNKNOWN;
-    const previousDayComparison = needInjectIndex && Settings?.AirQuality?.Comparison?.ReplaceWhenCurrentChange ? AirQuality.Config.CompareCategoryIndexes.UNKNOWN : weatherKitComparison;
-    const needInjectComparison = previousDayComparison === AirQuality.Config.CompareCategoryIndexes.UNKNOWN;
-    const currentIndexProvider = needInjectIndex ? Settings?.AirQuality?.Current?.Index?.Provider : "WeatherKit";
-    const injectedComparison = needInjectComparison ? await InjectComparison(injectedIndex, currentIndexProvider, Settings, Caches, enviroments) : { ...injectedIndex, previousDayComparison: weatherKitComparison };
-
-    // Step 5. Collect metadata from each stage and build the final providerName display text.
-    const weatherKitMetadata = airQuality?.metadata;
-    const pollutantMetadata = injectedPollutants?.metadata;
-    const indexMetadata = injectedIndex?.metadata;
-    const comparisonMetadata = injectedComparison?.metadata;
-    const providers = [
-        ...(weatherKitMetadata?.providerName && !weatherKitMetadata.temporarilyUnavailable ? [weatherKitMetadata.providerName] : []),
-        ...(needPollutants && pollutantMetadata?.providerName && !pollutantMetadata.temporarilyUnavailable ? [`Pollutants: ${pollutantMetadata.providerName}`] : []),
-        ...(needInjectIndex && indexMetadata?.providerName && !indexMetadata.temporarilyUnavailable ? [`Index: ${AirQuality.appendScaleToProviderName(injectedIndex, Settings)}`] : []),
-        ...(needInjectComparison && comparisonMetadata?.providerName && !comparisonMetadata.temporarilyUnavailable ? [`Yesterday Comparison:\n${comparisonMetadata.providerName}`] : []),
-    ];
-
-    // Step 6. Merge metadata and remove providerLogo to prevent Weather from trying to render custom footer icons.
-    const { providerLogo, ...metadata } = (airQuality?.metadata ? airQuality.metadata : injectedPollutants?.metadata) ?? {};
-
-    // Step 7. Merge output, prefer available injected results, and normalize metadata / pollutants / previousDayComparison.
-    airQuality = {
-        ...airQuality,
-        ...(injectedIndex?.metadata && !injectedIndex.metadata.temporarilyUnavailable ? injectedIndex : {}),
-        metadata: {
-            ...metadata,
-            providerName: providers.join("\n"),
-        },
-        pollutants: AirQuality.ConvertPollutants(airQuality, injectedPollutants, needInjectIndex, injectedIndex, Settings) ?? [],
-        previousDayComparison: injectedComparison?.previousDayComparison ?? AirQuality.Config.CompareCategoryIndexes.UNKNOWN,
-    };
-    Console.debug(`airQuality: ${JSON.stringify(airQuality, null, 2)}`);
-    return airQuality;
-}
-
-async function InjectPollutants(airQuality, Settings, enviroments) {
-    Console.info("☑️ InjectPollutants");
-
-    switch (Settings?.AirQuality?.Current?.Pollutants?.Provider) {
-        case "WeatherKit": {
-            Console.info("✅ InjectPollutants");
-            return airQuality;
-        }
-        case "WAQI": {
-            const currentAirQuality = await FetchWAQIAirQuality(Settings, enviroments);
-            Console.info("✅ InjectPollutants");
-            return currentAirQuality;
-        }
-        case "IQAir": {
-            const currentAirQuality = await enviroments.iqAir.CurrentAirQuality();
-            Console.info("✅ InjectPollutants");
-            return currentAirQuality;
-        }
-        case "QWeather": {
-            const currentAirQuality = await enviroments.qWeather.CurrentAirQuality();
-            Console.info("✅ InjectPollutants");
-            return currentAirQuality;
-        }
-        default: {
-            Console.info("✅ InjectPollutants");
-            return airQuality;
-        }
-    }
-}
-
 function isWeatherReplaceEnabled(Settings, country) {
     return (Settings?.Weather?.Replace ?? []).some(rule => {
         if (!rule) return false;
@@ -566,225 +465,30 @@ function isWeatherReplaceEnabled(Settings, country) {
     });
 }
 
-async function FetchWAQIAirQuality(Settings, enviroments) {
-    if (Settings?.API?.WAQI?.Token) return await enviroments.waqi.AQI2();
-
-    const Nearest = await enviroments.waqi.Nearest();
-    const Token = await enviroments.waqi.Token(Nearest?.metadata?.stationId);
-    const aqi = await enviroments.waqi.AQI(Nearest?.metadata?.stationId, Token);
-
-    return {
-        metadata: { ...Nearest?.metadata, ...aqi?.metadata },
-        ...Nearest,
-        ...aqi,
-    };
+function hasAvailableProviderData(data) {
+    return !!(data?.metadata && !data.metadata.temporarilyUnavailable);
 }
 
-/**
- * Inject air-quality index data.
- * @param {any} airQuality - Air-quality object.
- * @param {import('../types').Settings} Settings - Settings object.
- * @param {any} enviroments - Provider instances and request context.
- * @returns {Promise<any>} Air-quality object after injection.
- */
-async function InjectIndex(airQuality, Settings, enviroments) {
-    Console.info("☑️ InjectIndex");
-
-    switch (Settings?.AirQuality?.Current?.Index?.Provider) {
-        case "WeatherKit": {
-            Console.info("✅ InjectIndex");
-            return airQuality;
-        }
-        case "WeatherKit_US": {
-            if (!Array.isArray(airQuality?.pollutants) || airQuality.pollutants.length === 0) {
-                Console.warn("InjectIndex", "No WeatherKit pollutants available for US AQI, keep current air quality");
-                Console.info("✅ InjectIndex");
-                return airQuality;
-            }
-            const currentAirQuality = AirQuality.Pollutants2AQI(airQuality, Settings, { algorithm: "WAQI_InstantCast_US" });
-            if (currentAirQuality?.metadata && !currentAirQuality.metadata.temporarilyUnavailable) {
-                currentAirQuality.metadata = {
-                    ...airQuality?.metadata,
-                    providerName: "WeatherKit",
-                    temporarilyUnavailable: false,
-                };
-            }
-            Console.info("✅ InjectIndex");
-            return currentAirQuality;
-        }
-        case "QWeather": {
-            const currentAirQuality = await enviroments.qWeather.CurrentAirQuality(Settings.AirQuality.Current.Index.ForceCNPrimaryPollutants);
-            Console.info("✅ InjectIndex");
-            return currentAirQuality;
-        }
-        case "WAQI": {
-            const currentAirQuality = await FetchWAQIAirQuality(Settings, enviroments);
-            Console.info("✅ InjectIndex");
-            return currentAirQuality;
-        }
-        case "IQAir": {
-            const currentAirQuality = await enviroments.iqAir.CurrentAirQuality();
-            Console.info("✅ InjectIndex");
-            return currentAirQuality;
-        }
-        case "Calculate": {
-            if (!Array.isArray(airQuality?.pollutants) || airQuality.pollutants.length === 0) {
-                Console.warn("InjectIndex", "No pollutants available for Calculate, keep current air quality");
-                Console.info("✅ InjectIndex");
-                return airQuality;
-            }
-            const currentAirQuality = AirQuality.Pollutants2AQI(airQuality, Settings);
-            Console.info("✅ InjectIndex");
-            return currentAirQuality;
-        }
-        default: {
-            Console.info("✅ InjectIndex");
-            return airQuality;
-        }
+async function FetchProviderData(method, provider, enviroments) {
+    switch (provider) {
+        case "QWeather":
+            return await enviroments.qWeather[method]();
+        case "OpenWeather":
+            return await enviroments.openWeather[method]();
+        case "WeatherKit":
+        default:
+            return undefined;
     }
 }
 
-async function InjectComparison(airQuality, currentIndexProvider, Settings, Caches, enviroments) {
-    Console.info("☑️ InjectComparison");
-
-    const { UNKNOWN } = AirQuality.Config.CompareCategoryIndexes;
-    const unavailableComparison = providerName => {
-        Console.info("✅ InjectComparison");
-        return { metadata: { providerName, temporarilyUnavailable: true }, previousDayComparison: UNKNOWN };
-    };
-
-    /**
-     * HJ 633—2012
-     * Ambient Air Quality Index (AQI) Technical Regulation (Trial), Ministry of Ecology and Environment of China.
-     * @link https://www.mee.gov.cn/ywgz/fgbz/bz/bzwb/jcffbz/201203/t20120302_224166.shtml
-     */
-    const isHJ6332012 = (currentIndexProvider, currentScale, Settings) => {
-        Console.info("☑️ isHJ6332012", `currentIndexProvider: ${currentIndexProvider}`);
-
-        switch (currentIndexProvider) {
-            case "Calculate": {
-                Console.debug(`Settings?.AirQuality?.Calculate?.Algorithm: ${Settings?.AirQuality?.Calculate?.Algorithm}`);
-                const result = Settings?.AirQuality?.Calculate?.Algorithm === "WAQI_InstantCast_CN";
-                Console.info("✅ isHJ6332012", result);
-                return result;
-            }
-            case "QWeather": {
-                Console.info("✅ isHJ6332012", true);
-                return true;
-            }
-            case "WeatherKit": {
-                const result = AirQuality.GetNameFromScale(currentScale) === AirQuality.Config.Scales.HJ6332012.weatherKitScale.name;
-                Console.info("✅ isHJ6332012", result);
-                return result;
-            }
-            default: {
-                Console.info("✅ isHJ6332012", false);
-                return false;
-            }
-        }
-    };
-    const qweatherComparison = async (currentCategoryIndex, pollutantsToAirQuality) => {
-        Console.info("☑️ qweatherComparison", `currentCategoryIndex: ${currentCategoryIndex}`);
-        const setQWeatherCache = qweatherCache => {
-            Caches.qweather = qweatherCache;
-            Storage.setItem("@iRingo.WeatherKit.Caches", { ...Caches, qweather: qweatherCache });
-        };
-
-        const locationsGrid = await QWeather.GetLocationsGrid(Caches?.qweather, setQWeatherCache);
-        const { latitude, longitude } = enviroments.qWeather;
-        const locationInfo = QWeather.GetLocationInfo(locationsGrid, latitude, longitude);
-
-        const yesterdayQWeather = await enviroments.qWeather.YesterdayAirQuality(locationInfo);
-
-        const getMetadata = (indexProvider, temporarilyUnavailable = false) => ({
-            ...yesterdayQWeather.metadata,
-            providerName: `Pollutants: QWeather, Index: ${indexProvider}`,
-            temporarilyUnavailable,
-        });
-
-        if (!yesterdayQWeather.metadata.temporarilyUnavailable) {
-            const airQualityFromPollutants = pollutantsToAirQuality(yesterdayQWeather);
-            const yesterdayAirQuality = pollutantsToAirQuality
-                ? {
-                      ...airQualityFromPollutants,
-                      metadata: {
-                          ...airQualityFromPollutants.metadata,
-                          providerName: AirQuality.appendScaleToProviderName(airQualityFromPollutants, Settings),
-                      },
-                  }
-                : {
-                      ...yesterdayQWeather,
-                      metadata: {
-                          ...yesterdayQWeather.metadata,
-                          providerName: AirQuality.appendScaleToProviderName(yesterdayQWeather),
-                      },
-                  };
-
-            if (currentCategoryIndex) {
-                const comparisonAirQuality = {
-                    ...yesterdayQWeather,
-                    metadata: getMetadata(yesterdayAirQuality.metadata.providerName, false),
-                    previousDayComparison: AirQuality.CompareCategoryIndexes(currentCategoryIndex, yesterdayAirQuality.categoryIndex),
-                };
-                Console.info("✅ qweatherComparison");
-                return comparisonAirQuality;
-            } else {
-                const qweatherCurrent = await enviroments.qWeather.CurrentAirQuality(locationInfo);
-                if (!qweatherCurrent.metadata.temporarilyUnavailable) {
-                    Console.debug(`qweatherCurrent?.index: ${qweatherCurrent?.index}`);
-
-                    const comparisonAirQuality = {
-                        ...yesterdayQWeather,
-                        metadata: getMetadata(yesterdayAirQuality.metadata.providerName, false),
-                        previousDayComparison: AirQuality.CompareCategoryIndexes(qweatherCurrent.categoryIndex, yesterdayAirQuality.categoryIndex),
-                    };
-                    Console.info("✅ qweatherComparison");
-                    return comparisonAirQuality;
-                }
-            }
-        }
-
-        Console.error("qweatherComparison", `Unable to fetch ${yesterdayQWeather.metadata.temporarilyUnavailable ? "yesterday" : "current"} air-quality data from QWeather`);
-        return {
-            ...yesterdayQWeather,
-            metadata: getMetadata(yesterdayQWeather.metadata.providerName, true),
-            previousDayComparison: UNKNOWN,
-        };
-    };
-
-    switch (Settings?.AirQuality?.Comparison?.Yesterday?.IndexProvider) {
-        case "Calculate": {
-            const algorithm = AirQuality.chooseAlogrithm(airQuality, Settings);
-            const PollutantsProvider = Settings?.AirQuality?.Comparison?.Yesterday?.PollutantsProvider;
-            Console.debug(`Settings?.AirQuality?.Comparison?.Yesterday?.PollutantsProvider: ${PollutantsProvider}`);
-
-            if (algorithm !== "") {
-                switch (PollutantsProvider) {
-                    case "QWeather": {
-                        const pollutantsToAirQuality = airQuality => AirQuality.Pollutants2AQI(airQuality, Settings, { algorithm });
-                        const comparisonAirQuality = await qweatherComparison(airQuality?.categoryIndex, pollutantsToAirQuality);
-                        Console.info("✅ InjectComparison");
-                        return comparisonAirQuality;
-                    }
-                    case "WeatherKit":
-                    default:
-                        return unavailableComparison(PollutantsProvider || "iRingo");
-                }
-            }
-
-            Console.error("InjectComparison", "Unsupported current air-quality standard");
-            return { metadata: { providerName: "iRingo", temporarilyUnavailable: true }, previousDayComparison: UNKNOWN };
-        }
-        case "QWeather": {
-            const comparisonAirQuality = await qweatherComparison(isHJ6332012(currentIndexProvider, airQuality?.scale, Settings) ? airQuality?.categoryIndex : undefined);
-            Console.info("✅ InjectComparison");
-            return comparisonAirQuality;
-        }
+async function FetchOpenWeatherFallback(method, fallbackProvider, enviroments, context) {
+    switch (fallbackProvider) {
+        case "QWeather":
+            Console.warn(context, "OpenWeather unavailable, fallback to QWeather");
+            return await FetchProviderData(method, "QWeather", enviroments);
         case "WeatherKit":
-            return unavailableComparison("WeatherKit");
-        default: {
-            Console.error("InjectComparison", "Unsupported yesterday AQI data source");
-            return unavailableComparison("iRingo");
-        }
+        default:
+            Console.warn(context, "OpenWeather unavailable, fallback to WeatherKit");
+            return undefined;
     }
 }

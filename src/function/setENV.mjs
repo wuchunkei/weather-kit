@@ -15,8 +15,6 @@ export default function setENV(name, platforms, database) {
     /***************** Settings *****************/
     Console.info(`typeof Settings: ${typeof Settings}`, `Settings: ${JSON.stringify(Settings, null, 2)}`);
     string2array("Weather.Replace");
-    string2array("AirQuality.Current.Index.Replace");
-    string2array("AirQuality.Current.Pollutants.Units.Replace");
     /***************** Caches *****************/
     //Console.debug(`typeof Caches: ${typeof Caches}`, `Caches: ${JSON.stringify(Caches)}`);
     /***************** Configs *****************/

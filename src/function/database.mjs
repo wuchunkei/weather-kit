@@ -2,14 +2,9 @@ export default {
     WeatherKit: {
         Settings: {
             DataSets: ["airQuality", "currentWeather", "forecastDaily", "forecastHourly", "forecastNextHour", "locationInfo", "news", "historicalComparisons", "weatherAlerts", "weatherChanges"],
-            Weather: { Replace: ["CN"], Provider: "WeatherKit" },
-            NextHour: { Provider: "WeatherKit" },
-            AirQuality: {
-                Current: { Pollutants: { Provider: "WeatherKit", Units: { Replace: [], Mode: "Scale" } }, Index: { Replace: ["HJ6332012"], Provider: "WeatherKit_US", ForceCNPrimaryPollutants: true } },
-                Comparison: { ReplaceWhenCurrentChange: false, Yesterday: { PollutantsProvider: "WeatherKit", IndexProvider: "WeatherKit" } },
-                Calculate: { Algorithm: "EU_EAQI", AllowOverRange: true },
-            },
-            API: { WAQI: { Token: null }, IQAir: { Token: null, URL: "https://api.airvisual.com/v2/nearest_city" }, QWeather: { Token: null, Host: "devapi.qweather.com" }, OpenWeather: { Token: null, URL: "https://api.openweathermap.org/data/4.0/onecall" } },
+            Weather: { Replace: ["CN"], Provider: "WeatherKit", Fallback: { Provider: "WeatherKit" } },
+            NextHour: { Provider: "WeatherKit", Fallback: { Provider: "WeatherKit" } },
+            API: { QWeather: { Token: null, Host: "devapi.qweather.com" }, OpenWeather: { Token: null, URL: "https://api.openweathermap.org/data/4.0/onecall" } },
         },
         Configs: {
             Availability: {

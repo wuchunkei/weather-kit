@@ -1,9 +1,10 @@
 ## 3.1.6
 
 ### 🛠️ Bug Fixes
-  * Rebuilt from 3.1.5 and kept WeatherKit as the default air-quality data source.
-  * Added a `WeatherKit (US AQI)` current AQI provider that converts Apple WeatherKit pollutant data to the US EPA AQI scale without calling WAQI, IQAir, QWeather, or OpenWeather.
-  * Kept the replacement trigger on China AQI (`HJ6332012`) so China WeatherKit AQI responses are recalculated and emitted as US AQI (`EPA_NowCast`).
+  * Overwrote 3.1.6 with a Weather/Next-Hour focused build based on 3.1.5.
+  * Removed AQI, pollutant, and iRingo built-in AQI algorithm controls from generated modules; WeatherKit air quality is left untouched.
+  * Added selectable OpenWeather fallback providers for Weather and Next-Hour Precipitation Intensity: WeatherKit or QWeather.
+  * Kept only OpenWeather and QWeather API settings in generated modules.
 
 ## 3.1.5
 
