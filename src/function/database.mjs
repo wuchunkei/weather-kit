@@ -5,7 +5,7 @@ export default {
             Weather: { Replace: ["CN"], Provider: "WeatherKit" },
             NextHour: { Provider: "WeatherKit" },
             AirQuality: {
-                Current: { Pollutants: { Provider: "WeatherKit", Units: { Replace: [], Mode: "Scale" } }, Index: { Replace: ["HJ6332012"], Provider: "WeatherKit", ForceCNPrimaryPollutants: true } },
+                Current: { Pollutants: { Provider: "WeatherKit", Units: { Replace: [], Mode: "Scale" } }, Index: { Replace: ["HJ6332012"], Provider: "WeatherKit_US", ForceCNPrimaryPollutants: true } },
                 Comparison: { ReplaceWhenCurrentChange: false, Yesterday: { PollutantsProvider: "WeatherKit", IndexProvider: "WeatherKit" } },
                 Calculate: { Algorithm: "EU_EAQI", AllowOverRange: true },
             },

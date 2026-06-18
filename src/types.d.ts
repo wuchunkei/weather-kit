@@ -161,20 +161,21 @@ export interface Settings {
                 /**
                  * [Current AQI] Data Source
                  *
-                 * Use the selected provider to fill and replace AQI data.
+                 * Use the selected provider to fill and replace AQI data. WeatherKit (US AQI) uses Apple WeatherKit pollutants and converts only the AQI scale to EPA/US. Keep China AQI selected in Replacement Targets to convert CN responses.
                  *
                  * @remarks
                  *
                  * Possible values:
                  * - `'WeatherKit'` - WeatherKit (No replacement)
+                 * - `'WeatherKit_US'` - WeatherKit (US AQI)
                  * - `'Calculate'` - iRingo Built-in Algorithm
                  * - `'WAQI'` - WAQI
                  * - `'IQAir'` - IQAir (US EPA)
                  * - `'QWeather'` - QWeather (China AQI, 2012-02 edition)
                  *
-                 * @defaultValue "WeatherKit"
+                 * @defaultValue "WeatherKit_US"
                  */
-                Provider?: 'WeatherKit' | 'Calculate' | 'WAQI' | 'IQAir' | 'QWeather';
+                Provider?: 'WeatherKit' | 'WeatherKit_US' | 'Calculate' | 'WAQI' | 'IQAir' | 'QWeather';
                 /**
                  * [Current AQI] Force Primary Pollutant
                  *

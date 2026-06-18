@@ -192,16 +192,17 @@ const airQualityCurrentIndexReplace: Arg = {
 const airQualityCurrentIndexProvider: Arg = {
     key: "AirQuality.Current.Index.Provider",
     name: "[Current AQI] Data Source",
-    defaultValue: "WeatherKit",
+    defaultValue: "WeatherKit_US",
     type: "string",
     options: [
         { key: "WeatherKit", label: "WeatherKit (No replacement)" },
+        { key: "WeatherKit_US", label: "WeatherKit (US AQI)" },
         { key: "Calculate", label: "iRingo Built-in Algorithm" },
         { key: "WAQI", label: "WAQI" },
         { key: "IQAir", label: "IQAir (US EPA)" },
         { key: "QWeather", label: "QWeather (China AQI, 2012-02 edition)" },
     ],
-    description: "Use the selected provider to fill and replace AQI data.",
+    description: "Use the selected provider to fill and replace AQI data. WeatherKit (US AQI) uses Apple WeatherKit pollutants and converts only the AQI scale to EPA/US. Keep China AQI selected in Replacement Targets to convert CN responses.",
 };
 
 const airQualityCurrentIndexForceCNPrimaryPollutants: Arg = {

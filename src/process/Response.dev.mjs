@@ -658,6 +658,23 @@ async function InjectIndex(airQuality, Settings, enviroments) {
             Console.info("✅ InjectIndex");
             return airQuality;
         }
+        case "WeatherKit_US": {
+            if (!Array.isArray(airQuality?.pollutants) || airQuality.pollutants.length === 0) {
+                Console.warn("InjectIndex", "No WeatherKit pollutants available for US AQI, keep current air quality");
+                Console.info("✅ InjectIndex");
+                return airQuality;
+            }
+            const currentAirQuality = AirQuality.Pollutants2AQI(airQuality, Settings, { algorithm: "WAQI_InstantCast_US" });
+            if (currentAirQuality?.metadata && !currentAirQuality.metadata.temporarilyUnavailable) {
+                currentAirQuality.metadata = {
+                    ...airQuality?.metadata,
+                    providerName: "WeatherKit",
+                    temporarilyUnavailable: false,
+                };
+            }
+            Console.info("✅ InjectIndex");
+            return currentAirQuality;
+        }
         case "QWeather": {
             const currentAirQuality = await enviroments.qWeather.CurrentAirQuality(Settings.AirQuality.Current.Index.ForceCNPrimaryPollutants);
             Console.info("✅ InjectIndex");
