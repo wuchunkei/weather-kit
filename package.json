@@ -1,0 +1,68 @@
+{
+    "name": "@nsringo/weatherkit",
+    "organizationName": " iRingo",
+    "displayName": " iRingo: 🌤 WeatherKit",
+    "description": "iOS 18 & macOS 15 & watchOS 11\n1.解锁全部天气功能\n2.替换空气质量数据\n3.添加下一小时降水数据\n4.添加天气数据",
+    "homepage": "https://NSRingo.github.io/guide/Weather/weather-kit",
+    "openUrl": "http://boxjs.com/#/app/iRingo.WeatherKit",
+    "icon": "https://developer.apple.com/assets/elements/icons/weatherkit/weatherkit-128x128.png",
+    "keywords": [],
+    "contributors": [
+        "VirgilClyne[https://github.com/VirgilClyne]",
+        "WordlessEcho[https://github.com/WordlessEcho]",
+        "001[https://github.com/001ProMax]"
+    ],
+    "system": [
+        "iOS",
+        "iPadOS",
+        "macOS",
+        "watchOS"
+    ],
+    "systemVersion": 18,
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/NSRingo/WeatherKit.git"
+    },
+    "directories": {
+        "example": "example"
+    },
+    "scripts": {
+        "dev": "npm-run-all --parallel build:dev sgmoudle:dev",
+        "dev:vercel": "npx vercel dev --listen 8787",
+        "dev:wrangler": "npx wrangler dev",
+        "deploy:vercel": "npx vercel deploy --prod",
+        "deploy:wrangler": "npx wrangler deploy --minify",
+        "serve": "webpack serve",
+        "build": "rspack build",
+        "build:dev": "rspack build -c rspack.dev.config.mjs --mode=development",
+        "sgmoudle:dev": "sgmoudle dev",
+        "build:lite-args": "arguments-builder build",
+        "build:full-args": "arguments-builder boxjs -c arguments-builder-full.config.ts",
+        "build:args:workers": "arguments-builder build --config arguments-builder.workers.config.ts",
+        "build:args": "npm-run-all --serial build:lite-args build:full-args",
+        "dts": "arguments-builder dts -c arguments-builder-full.config.ts",
+        "submodule": "git submodule update --remote",
+        "update": "npm update --save"
+    },
+    "browserslist": [
+        "iOS >= 18"
+    ],
+    "devDependencies": {
+        "@biomejs/biome": "2.1.4",
+        "@iringo/arguments-builder": "^1.8.5",
+        "@iringo/sgmoudle-tools": "^1.2.2",
+        "@rspack/cli": "^1.7.7",
+        "@rspack/core": "^1.7.7",
+        "npm-run-all": "^4.1.5",
+        "typescript": "^5.9.3"
+    },
+    "dependencies": {
+        "@nsnanocat/util": "^2.2.3",
+        "fetch-cookie": "^3.2.0",
+        "flatbuffers": "^24.12.23",
+        "hono": "^4.12.5",
+        "node-fetch": "^3.3.2",
+        "node-polyfill-webpack-plugin": "^4.1.0"
+    }
+}
