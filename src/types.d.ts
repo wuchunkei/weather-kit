@@ -25,11 +25,18 @@ export interface Settings {
     /**
          * [天气] 替换范围
          *
-         * 正则表达式，只替换指定地区的天气。
+         * 只替换指定地区的天气。
          *
-         * @defaultValue ["CN"]
+         * @remarks
+         *
+         * Possible values:
+         * - `'CN'` - 中国大陆
+         * - `'CN|HK|MO|TW'` - 中国大陆、港澳台
+         * - `'.*'` - 全部地区
+         *
+         * @defaultValue "CN"
          */
-        Replace?: any[];
+        Replace?: 'CN' | 'CN|HK|MO|TW' | '.*';
     /**
          * [天气] 数据源
          *

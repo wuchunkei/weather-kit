@@ -24,7 +24,7 @@ export default function providerNameToLogo(providerName, version) {
             providerLogo = `https://weatherkit.apple.com/assets/${version}/QWeather.png`;
             break;
         case "OpenWeather":
-            providerLogo = "https://openweathermap.org/themes/openweathermap/assets/img/logo_white_cropped.png";
+            providerLogo = `https://raw.githubusercontent.com/wuchunkei/weather-kit/main/images/icon/${version}/OpenWeather.png`;
             break;
         case "The Weather Channel":
             providerLogo = `https://weatherkit.apple.com/assets/${version}/TWC.png`;

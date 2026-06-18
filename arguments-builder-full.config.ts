@@ -74,9 +74,14 @@ const dataSets: Arg[] = [
 const weatherReplace: Arg = {
     key: "Weather.Replace",
     name: "[天气] 替换范围",
-    defaultValue: ["CN"],
-    type: "array",
-    description: "正则表达式，只替换指定地区的天气。",
+    defaultValue: "CN",
+    type: "string",
+    options: [
+        { key: "CN", label: "中国大陆" },
+        { key: "CN|HK|MO|TW", label: "中国大陆、港澳台" },
+        { key: ".*", label: "全部地区" },
+    ],
+    description: "只替换指定地区的天气。",
 };
 
 const weatherProvider: Arg = {
