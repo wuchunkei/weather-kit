@@ -30,6 +30,20 @@ export default class WAQI {
         },
     };
 
+    #Scale = AirQuality.Config.Scales.WAQI_InstantCast_US;
+
+    #CategoryIndex(index) {
+        return AirQuality.CategoryIndex(Number.parseInt(index, 10), this.#Scale.categories);
+    }
+
+    #IsSignificant(categoryIndex) {
+        return categoryIndex >= this.#Scale.categories.significantIndex;
+    }
+
+    #WeatherKitScale() {
+        return AirQuality.ToWeatherKitScale(this.#Scale.weatherKitScale);
+    }
+
     async Nearest(mapqVersion = "mapq") {
         Console.info("☑️ Nearest", `mapqVersion: ${mapqVersion}`);
         const request = {
@@ -62,14 +76,14 @@ export default class WAQI {
                                     stationId: Number.parseInt(body?.d?.[0]?.x, 10),
                                     stationKey: body?.d?.[0]?.k,
                                 },
-                                categoryIndex: AirQuality.CategoryIndex(body?.d?.[0]?.v, "WAQI_InstantCast"),
+                                categoryIndex: this.#CategoryIndex(body?.d?.[0]?.v),
                                 index: Number.parseInt(body?.d?.[0]?.v, 10),
                                 //"previousDayComparison": "UNKNOWN",
                                 pollutants: [],
                                 primaryPollutant: this.#Configs.Pollutants[body?.d?.[0]?.pol] || "NOT_AVAILABLE",
-                                scale: "EPA_NowCast",
+                                scale: this.#WeatherKitScale(),
                             };
-                            airQuality.isSignificant = airQuality.categoryIndex >= 3;
+                            airQuality.isSignificant = this.#IsSignificant(airQuality.categoryIndex);
                             break;
                         }
                         case "error":
@@ -95,14 +109,14 @@ export default class WAQI {
                                     sourceType: "STATION",
                                     stationId: Number.parseInt(body?.data?.stations?.[0]?.idx, 10),
                                 },
-                                categoryIndex: AirQuality.CategoryIndex(body?.data?.stations?.[0]?.aqi, "WAQI_InstantCast"),
+                                categoryIndex: this.#CategoryIndex(body?.data?.stations?.[0]?.aqi),
                                 index: Number.parseInt(body?.data?.stations?.[0]?.aqi, 10),
                                 //"previousDayComparison": "UNKNOWN",
                                 pollutants: [],
                                 primaryPollutant: "NOT_AVAILABLE",
-                                scale: "EPA_NowCast",
+                                scale: this.#WeatherKitScale(),
                             };
-                            airQuality.isSignificant = airQuality.categoryIndex >= 3;
+                            airQuality.isSignificant = this.#IsSignificant(airQuality.categoryIndex);
                             break;
                         }
                         case "error":
@@ -196,14 +210,14 @@ export default class WAQI {
                                             sourceType: "STATION",
                                             stationId: stationId,
                                         },
-                                        categoryIndex: AirQuality.CategoryIndex(body?.rxs?.obs?.[0]?.msg?.aqi, "WAQI_InstantCast"),
+                                        categoryIndex: this.#CategoryIndex(body?.rxs?.obs?.[0]?.msg?.aqi),
                                         index: Number.parseInt(body?.rxs?.obs?.[0]?.msg?.aqi, 10),
                                         //"previousDayComparison": "UNKNOWN",
                                         pollutants: [],
                                         primaryPollutant: this.#Configs.Pollutants[body?.rxs?.obs?.[0]?.msg?.dominentpol] || "NOT_AVAILABLE",
-                                        scale: "EPA_NowCast",
+                                        scale: this.#WeatherKitScale(),
                                     };
-                                    airQuality.isSignificant = airQuality.categoryIndex >= 3;
+                                    airQuality.isSignificant = this.#IsSignificant(airQuality.categoryIndex);
                                     break;
                                 }
                                 case "error":
@@ -254,14 +268,14 @@ export default class WAQI {
                             sourceType: "STATION",
                             stationId: stationId || Number.parseInt(body?.data?.idx, 10),
                         },
-                        categoryIndex: AirQuality.CategoryIndex(body?.data?.aqi, "WAQI_InstantCast"),
+                        categoryIndex: this.#CategoryIndex(body?.data?.aqi),
                         index: Number.parseInt(body?.data?.aqi, 10),
                         //"previousDayComparison": "UNKNOWN",
                         pollutants: [],
                         primaryPollutant: this.#Configs.Pollutants[body?.data?.dominentpol] || "NOT_AVAILABLE",
-                        scale: "EPA_NowCast",
+                        scale: this.#WeatherKitScale(),
                     };
-                    airQuality.isSignificant = airQuality.categoryIndex >= 3;
+                    airQuality.isSignificant = this.#IsSignificant(airQuality.categoryIndex);
                     break;
                 }
                 case "error":
