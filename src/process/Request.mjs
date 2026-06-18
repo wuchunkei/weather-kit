@@ -1,6 +1,15 @@
 import { Console, Lodash as _, Storage } from "@nsnanocat/util";
 import database from "../function/database.mjs";
 import setENV from "../function/setENV.mjs";
+
+function FixWeatherMapOverlayRequest($request, url) {
+    if (!/^\/v\d+\/mapOverlay\//.test(url.pathname)) return;
+    const headers = ($request.headers ??= {});
+    for (const name of ["GeoCountryCode", "geocountrycode", "Geo-Country-Code", "geo-country-code", "X-Geo-Country-Code", "x-geo-country-code", "X-Apple-Geo-Country-Code", "x-apple-geo-country-code"]) headers[name] = "US";
+    if (url.searchParams.has("country")) url.searchParams.set("country", "US");
+    if (url.searchParams.has("countryCode")) url.searchParams.set("countryCode", "US");
+}
+
 /***************** Processing *****************/
 export async function Request($request) {
     // 构造回复数据
@@ -108,6 +117,10 @@ export async function Request($request) {
                         }
                     }
                     break;
+                case "weather-map2.apple.com": {
+                    FixWeatherMapOverlayRequest($request, url);
+                    break;
+                }
             }
             break;
         case "CONNECT":

@@ -1,3 +1,10 @@
+## 3.1.2
+
+### 🛠️ Bug Fixes
+  * 修复 Weather App 空气质量地图：为 `weather-map2.apple.com` 的地图图层请求加入本地 request rewrite，并将地图图层的地区 header 规范为 `US`，避免部分地区 Air Quality 图层不可用。
+  * 移除 WeatherKit 响应中的 `providerLogo` 写入，避免底部 provider footer 尝试显示自定义来源图标。
+  * 为 IQAir 当前空气质量请求增加单轮缓存，减少同一轮 WeatherKit 响应内重复请求导致的空结果。
+
 ### 🆕 New Features
   * 新增基于云函数的 `WeatherKit (Rewrite)` 新模块，面向 `Loon`、`Surge`、`Stash`、`Shadowrocket` 提供新的 Rewrite 版本配置。
 
