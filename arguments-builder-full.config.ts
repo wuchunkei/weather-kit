@@ -86,6 +86,7 @@ const weatherProvider: Arg = {
     type: "string",
     options: [
         { key: "WeatherKit", label: "WeatherKit（不替换）" },
+        { key: "OpenWeather", label: "OpenWeather" },
         { key: "QWeather", label: "和风天气" },
     ],
     description: "使用选定的数据源替换天气数据。",
@@ -101,9 +102,10 @@ const nextHourProvider: Arg = {
     type: "string",
     options: [
         { key: "WeatherKit", label: "WeatherKit（不添加）" },
+        { key: "OpenWeather", label: "OpenWeather" },
         { key: "QWeather", label: "和风天气" },
     ],
-    description: "使用选定的数据源填充未来一小时降水强度的数据。",
+    description: "使用选定的数据源替换或填充未来一小时降水强度的数据。",
 };
 
 export const nextHour = [nextHourProvider];
@@ -260,6 +262,22 @@ export const calculate = [calculateAlgorithm];
 const calculateFull = [calculateAlgorithm, calculateAllowOverRange];
 
 export const api: Arg[] = [
+    {
+        key: "API.OpenWeather.URL",
+        name: "[API] OpenWeather 请求地址",
+        defaultValue: "https://api.openweathermap.org/data/4.0/onecall",
+        type: "string",
+        placeholder: "https://api.openweathermap.org/data/4.0/onecall",
+        description: "OpenWeather One Call API 4.0 请求地址",
+    },
+    {
+        key: "API.OpenWeather.Token",
+        name: "[API] OpenWeather 令牌",
+        defaultValue: "",
+        type: "string",
+        placeholder: "123456789123456789abcdefghijklmnopqrstuv",
+        description: "OpenWeather API 令牌",
+    },
     {
         key: "API.QWeather.Host",
         name: "[API] 和风天气主机",

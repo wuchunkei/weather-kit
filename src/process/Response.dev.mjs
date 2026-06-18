@@ -5,6 +5,7 @@ import * as flatbuffers from "flatbuffers";
 import WeatherKit2 from "../class/WeatherKit2.mjs";
 import parseWeatherKitURL from "../function/parseWeatherKitURL.mjs";
 import providerNameToLogo from "../function/providerNameToLogo.mjs";
+import OpenWeather from "../class/OpenWeather.mjs";
 import QWeather from "../class/QWeather.mjs";
 import WAQI from "../class/WAQI.mjs";
 import Weather from "../class/Weather.mjs";
@@ -103,6 +104,7 @@ export async function Response($request, $response) {
                                 }
                                 const parameters = parseWeatherKitURL(url);
                                 const enviroments = {
+                                    openWeather: new OpenWeather(parameters, Settings?.API?.OpenWeather?.Token, Settings?.API?.OpenWeather?.URL),
                                     qWeather: new QWeather(parameters, Settings?.API?.QWeather?.Token, Settings?.API?.QWeather?.Host),
                                     waqi: new WAQI(parameters, Settings?.API?.WAQI?.Token),
                                     country: parameters.country,
@@ -232,6 +234,10 @@ async function InjectCurrentWeather(currentWeather, Settings, enviroments) {
         case "WeatherKit":
         default:
             break;
+        case "OpenWeather": {
+            newCurrentWeather = await enviroments.openWeather.WeatherNow();
+            break;
+        }
         case "QWeather": {
             newCurrentWeather = await enviroments.qWeather.WeatherNow();
             break;
@@ -265,6 +271,10 @@ async function InjectForecastDaily(forecastDaily, Settings, enviroments) {
         case "WeatherKit":
         default:
             break;
+        case "OpenWeather": {
+            newForecastDaily = await enviroments.openWeather.Daily();
+            break;
+        }
         case "QWeather": {
             newForecastDaily = await enviroments.qWeather.Daily();
             break;
@@ -298,6 +308,10 @@ async function InjectForecastHourly(forecastHourly, Settings, enviroments) {
         case "WeatherKit":
         default:
             break;
+        case "OpenWeather": {
+            newForecastHourly = await enviroments.openWeather.Hourly();
+            break;
+        }
         case "QWeather": {
             newForecastHourly = await enviroments.qWeather.Hourly();
             break;
@@ -322,7 +336,7 @@ async function InjectForecastHourly(forecastHourly, Settings, enviroments) {
 async function InjectForecastNextHour(forecastNextHour, Settings, enviroments) {
     Console.info("☑️ InjectForecastNextHour");
 
-    if (forecastNextHour) {
+    if (forecastNextHour && Settings?.NextHour?.Provider === "WeatherKit") {
         Console.info("✅ InjectForecastNextHour");
         return forecastNextHour;
     }
@@ -331,6 +345,10 @@ async function InjectForecastNextHour(forecastNextHour, Settings, enviroments) {
     switch (Settings?.NextHour?.Provider) {
         case "WeatherKit":
             break;
+        case "OpenWeather": {
+            newForecastNextHour = await enviroments.openWeather.Minutely();
+            break;
+        }
         case "QWeather": {
             newForecastNextHour = await enviroments.qWeather.Minutely();
             break;
