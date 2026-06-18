@@ -62,6 +62,15 @@ function patchWeatherRootFields(rawBody, body, dataSets = []) {
     return patchedBody;
 }
 
+function mergeAvailability(body, configuredAvailability) {
+    if (!configuredAvailability) return body;
+    if (Array.isArray(body) && Array.isArray(configuredAvailability)) return [...new Set([...body, ...configuredAvailability])];
+    if (body && typeof body === "object" && Array.isArray(body.dataSets) && Array.isArray(configuredAvailability)) {
+        return { ...body, dataSets: [...new Set([...body.dataSets, ...configuredAvailability])] };
+    }
+    return configuredAvailability;
+}
+
 function asUint8Array(bytes) {
     if (bytes instanceof Uint8Array) return bytes;
     if (bytes instanceof ArrayBuffer) return new Uint8Array(bytes);
@@ -109,7 +118,17 @@ function createProviderEnvironment(parameters, Settings) {
             return providers.iqAir;
         },
         country: parameters.country,
+        latitude: parameters.latitude,
+        longitude: parameters.longitude,
     };
+}
+
+function firstFiniteNumber(...values) {
+    for (const value of values) {
+        const number = Number.parseFloat(value);
+        if (Number.isFinite(number)) return number;
+    }
+    return undefined;
 }
 
 function cleanAppleFetchHeaders(headers = {}, country, storefront) {
@@ -256,7 +275,7 @@ export async function Response($request, $response) {
                     // Route by path.
                     if (/^\/api\/v[123]\/availability\//.test(url.pathname)) {
                         const version = url.pathname.match(/^\/api\/(?<version>v[123])\/availability\//)?.groups?.version;
-                        body = Configs?.Availability?.[version] ?? Configs?.Availability?.v2;
+                        body = mergeAvailability(body, Configs?.Availability?.[version] ?? Configs?.Availability?.v2);
                     }
                     break;
             }
@@ -285,39 +304,37 @@ export async function Response($request, $response) {
                                 const changedDataSets = new Set();
                                 const enviroments = createProviderEnvironment(parameters, Settings);
 
-                                await Promise.all(
-                                    parameters.dataSets.map(async dataSet => {
-                                        switch (dataSet) {
-                                            case "airQuality": {
-                                                body.airQuality = await InjectAirQuality(body.airQuality, Settings, Caches, enviroments);
-                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
-                                                break;
-                                            }
-                                            case "currentWeather": {
-                                                body.currentWeather = await InjectCurrentWeather(body.currentWeather, Settings, enviroments);
-                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
-                                                break;
-                                            }
-                                            case "forecastDaily": {
-                                                body.forecastDaily = await InjectForecastDaily(body.forecastDaily, Settings, enviroments);
-                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
-                                                break;
-                                            }
-                                            case "forecastHourly": {
-                                                body.forecastHourly = await InjectForecastHourly(body.forecastHourly, Settings, enviroments);
-                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
-                                                break;
-                                            }
-                                            case "forecastNextHour": {
-                                                body.forecastNextHour = await InjectForecastNextHour(body.forecastNextHour, Settings, enviroments);
-                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
-                                                break;
-                                            }
-                                            default:
-                                                break;
+                                for (const dataSet of parameters.dataSets) {
+                                    switch (dataSet) {
+                                        case "airQuality": {
+                                            body.airQuality = await InjectAirQuality(body.airQuality, Settings, Caches, enviroments);
+                                            if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
+                                            break;
                                         }
-                                    }),
-                                );
+                                        case "currentWeather": {
+                                            body.currentWeather = await InjectCurrentWeather(body.currentWeather, Settings, enviroments);
+                                            if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
+                                            break;
+                                        }
+                                        case "forecastDaily": {
+                                            body.forecastDaily = await InjectForecastDaily(body.forecastDaily, Settings, enviroments);
+                                            if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
+                                            break;
+                                        }
+                                        case "forecastHourly": {
+                                            body.forecastHourly = await InjectForecastHourly(body.forecastHourly, Settings, enviroments);
+                                            if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
+                                            break;
+                                        }
+                                        case "forecastNextHour": {
+                                            body.forecastNextHour = await InjectForecastNextHour(body.forecastNextHour, Settings, enviroments);
+                                            if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
+                                            break;
+                                        }
+                                        default:
+                                            break;
+                                    }
+                                }
                                 if (await FillLocalizedWeatherAlerts($request, url, body, parameters, Configs)) changedDataSets.add("weatherAlerts");
                                 try {
                                     rawBody = patchWeatherRootFields(rawBody, body, [...changedDataSets]);
@@ -553,6 +570,9 @@ async function InjectAirQuality(airQuality, Settings, Caches, enviroments) {
         ...(needPollutants && hasAvailableMetadata(injectedPollutants) ? injectedPollutants.metadata : {}),
         ...(isIndexInjected && hasAvailableMetadata(injectedIndex) ? injectedIndex.metadata : {}),
     };
+    const convertedPollutants = AirQuality.ConvertPollutants(airQuality, injectedPollutants, isIndexInjected, injectedIndex, Settings);
+    const originalPollutants = Array.isArray(airQuality?.pollutants) ? airQuality.pollutants : [];
+    const pollutants = Array.isArray(convertedPollutants) && convertedPollutants.length > 0 ? convertedPollutants : originalPollutants;
 
     // Step 7. Merge output, prefer available injected results, and normalize metadata / pollutants / previousDayComparison.
     airQuality = {
@@ -560,9 +580,11 @@ async function InjectAirQuality(airQuality, Settings, Caches, enviroments) {
         ...(isIndexInjected ? injectedIndex : {}),
         metadata: {
             ...metadata,
+            latitude: firstFiniteNumber(airQuality?.metadata?.latitude, enviroments.latitude, metadata.latitude),
+            longitude: firstFiniteNumber(airQuality?.metadata?.longitude, enviroments.longitude, metadata.longitude),
             providerName: providers.join("\n") || metadata.providerName,
         },
-        pollutants: AirQuality.ConvertPollutants(airQuality, injectedPollutants, isIndexInjected, injectedIndex, Settings) ?? [],
+        pollutants,
         previousDayComparison: injectedComparison?.previousDayComparison ?? AirQuality.Config.CompareCategoryIndexes.UNKNOWN,
     };
     Console.debug(`airQuality: ${JSON.stringify(airQuality, null, 2)}`);

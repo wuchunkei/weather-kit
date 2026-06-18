@@ -61,6 +61,50 @@ function ApplyNextHourVirtualCountry($request, url, Settings, dataSets) {
     ApplyVirtualCountry($request, url);
 }
 
+function isWeatherReplaceEnabled(Settings, country) {
+    return (Settings?.Weather?.Replace ?? []).some(rule => {
+        if (!rule) return false;
+        if (rule === country) return true;
+        try {
+            return new RegExp(rule).test(country);
+        } catch {
+            return false;
+        }
+    });
+}
+
+function shouldPatchAirQuality(Settings) {
+    return (
+        Settings?.AirQuality?.Current?.Pollutants?.Provider !== "WeatherKit" ||
+        Settings?.AirQuality?.Current?.Index?.Provider !== "WeatherKit" ||
+        Settings?.AirQuality?.Comparison?.ReplaceWhenCurrentChange ||
+        Settings?.AirQuality?.Comparison?.Yesterday?.PollutantsProvider !== "WeatherKit" ||
+        Settings?.AirQuality?.Comparison?.Yesterday?.IndexProvider !== "WeatherKit"
+    );
+}
+
+function needsWeatherResponseBody(Settings, country, dataSets = []) {
+    return dataSets.some(dataSet => {
+        switch (dataSet) {
+            case "airQuality":
+                return shouldPatchAirQuality(Settings);
+            case "currentWeather":
+            case "forecastDaily":
+            case "forecastHourly":
+                return Settings?.Weather?.Provider !== "WeatherKit" && isWeatherReplaceEnabled(Settings, country);
+            case "forecastNextHour":
+                return Settings?.NextHour?.Provider !== "WeatherKit";
+            default:
+                return false;
+        }
+    });
+}
+
+function deleteConditionalRequestHeaders($request) {
+    delete $request?.headers?.["If-None-Match"];
+    delete $request?.headers?.["if-none-match"];
+}
+
 /***************** Processing *****************/
 export async function Request($request) {
     // Build an optional synthetic response.
@@ -140,8 +184,6 @@ export async function Request($request) {
         case "HEAD":
         case "OPTIONS":
         default:
-            delete $request?.headers?.["If-None-Match"];
-            delete $request?.headers?.["if-none-match"];
             // Route by host.
             switch (url.hostname) {
                 case "weatherkit.apple.com":
@@ -149,6 +191,7 @@ export async function Request($request) {
                     switch (true) {
                         case /^\/api\/v[123]\/availability\//.test(url.pathname): {
                             ApplyAvailabilityVirtualCountry($request, url, Settings);
+                            if (Settings?.NextHour?.Provider !== "WeatherKit") deleteConditionalRequestHeaders($request);
                             break;
                         }
                         case /^\/api\/v[23]\/weather\//.test(url.pathname): {
@@ -168,7 +211,9 @@ export async function Request($request) {
                                 dataSets = dataSets?.filter(dataSet => !CONFIGURABLE_DATASETS.includes(dataSet) || Settings.DataSets?.includes(dataSet));
                                 url.searchParams.set("dataSets", dataSets?.join(","));
                             }
+                            const originalCountry = getRequestCountry($request, url);
                             ApplyNextHourVirtualCountry($request, url, Settings, dataSets);
+                            if (needsWeatherResponseBody(Settings, originalCountry, dataSets)) deleteConditionalRequestHeaders($request);
                             break;
                         }
                     }
