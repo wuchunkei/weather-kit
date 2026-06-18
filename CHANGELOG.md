@@ -1,3 +1,12 @@
+## 3.1.6
+
+### 🛠️ Bug Fixes
+  * Fixed Current AQI replacement with direct index providers such as IQAir and WAQI when the provider returns AQI indexes without pollutant concentration data.
+  * Fixed merged air-quality metadata so an available external AQI result can override Apple `temporarilyUnavailable` metadata instead of still showing as unavailable.
+  * Made weather and air-quality provider clients lazy-loaded, so QWeather is not initialized unless a selected feature actually needs it.
+  * Let the built-in Calculate mode fall back to an already available provider AQI index when no pollutant concentrations are available.
+  * Rebuilt from the 3.1.5 stable baseline without `weather-map2` map probing, `airQualityScale` interception, or extra Apple air-quality refetches to reduce Weather app loading churn.
+
 ## 3.1.5
 
 ### 🔄 Other Changes

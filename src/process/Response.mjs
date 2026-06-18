@@ -69,6 +69,49 @@ function asUint8Array(bytes) {
     return new Uint8Array();
 }
 
+const DIRECT_AQI_PROVIDERS = new Set(["QWeather", "WAQI", "IQAir"]);
+
+function hasAvailableMetadata(airQuality) {
+    return !!(airQuality?.metadata && !airQuality.metadata.temporarilyUnavailable);
+}
+
+function hasPollutants(airQuality) {
+    return Array.isArray(airQuality?.pollutants) && airQuality.pollutants.length > 0;
+}
+
+function hasUsableIndex(airQuality) {
+    const index = Number(airQuality?.index);
+    return hasAvailableMetadata(airQuality) && Number.isFinite(index) && index >= 0;
+}
+
+function isDirectAQIProvider(provider) {
+    return DIRECT_AQI_PROVIDERS.has(provider);
+}
+
+function createProviderEnvironment(parameters, Settings) {
+    const providers = {};
+
+    return {
+        get openWeather() {
+            if (!providers.openWeather) providers.openWeather = new OpenWeather(parameters, Settings?.API?.OpenWeather?.Token, Settings?.API?.OpenWeather?.URL);
+            return providers.openWeather;
+        },
+        get qWeather() {
+            if (!providers.qWeather) providers.qWeather = new QWeather(parameters, Settings?.API?.QWeather?.Token, Settings?.API?.QWeather?.Host);
+            return providers.qWeather;
+        },
+        get waqi() {
+            if (!providers.waqi) providers.waqi = new WAQI(parameters, Settings?.API?.WAQI?.Token);
+            return providers.waqi;
+        },
+        get iqAir() {
+            if (!providers.iqAir) providers.iqAir = new IQAir(parameters, Settings?.API?.IQAir?.Token, Settings?.API?.IQAir?.URL);
+            return providers.iqAir;
+        },
+        country: parameters.country,
+    };
+}
+
 function cleanAppleFetchHeaders(headers = {}, country, storefront) {
     const cleanedHeaders = { ...headers };
     Object.keys(cleanedHeaders).forEach(key => {
@@ -240,13 +283,7 @@ export async function Response($request, $response) {
                                 const parameters = parseWeatherKitURL(url);
                                 parameters.country = getHeader($request.headers, ORIGINAL_COUNTRY_HEADER) ?? parameters.country;
                                 const changedDataSets = new Set();
-                                const enviroments = {
-                                    openWeather: new OpenWeather(parameters, Settings?.API?.OpenWeather?.Token, Settings?.API?.OpenWeather?.URL),
-                                    qWeather: new QWeather(parameters, Settings?.API?.QWeather?.Token, Settings?.API?.QWeather?.Host),
-                                    waqi: new WAQI(parameters, Settings?.API?.WAQI?.Token),
-                                    iqAir: new IQAir(parameters, Settings?.API?.IQAir?.Token, Settings?.API?.IQAir?.URL),
-                                    country: parameters.country,
-                                };
+                                const enviroments = createProviderEnvironment(parameters, Settings);
 
                                 await Promise.all(
                                     parameters.dataSets.map(async dataSet => {
@@ -478,21 +515,25 @@ async function InjectAirQuality(airQuality, Settings, Caches, enviroments) {
     const isPollutantEmpty = !Array.isArray(airQuality?.pollutants) || airQuality.pollutants.length === 0;
     const pollutantProvider = Settings?.AirQuality?.Current?.Pollutants?.Provider ?? "QWeather";
     const injectedPollutants = isPollutantEmpty ? await InjectPollutants(airQuality, Settings, enviroments) : airQuality;
-    const needPollutants = pollutantProvider !== "WeatherKit" && isPollutantEmpty && !!(injectedPollutants?.metadata && !injectedPollutants.metadata.temporarilyUnavailable);
+    const needPollutants = pollutantProvider !== "WeatherKit" && isPollutantEmpty && hasAvailableMetadata(injectedPollutants) && hasPollutants(injectedPollutants);
 
     // Step 3. Decide whether to inject AQI indexes according to pollutant availability and replacement settings.
     const indexProvider = Settings?.AirQuality?.Current?.Index?.Provider ?? "Calculate";
     const indexSource = injectedPollutants ?? airQuality;
     const isIndexUnavailable = airQuality?.metadata?.temporarilyUnavailable || !Number.isFinite(Number(airQuality?.index)) || Number(airQuality?.index) < 0;
-    const needInjectIndex = indexProvider !== "WeatherKit" && (needPollutants || isIndexUnavailable || Settings?.AirQuality?.Current?.Index?.Replace?.includes(AirQuality.GetNameFromScale(airQuality?.scale)));
+    const replacementTargets = Settings?.AirQuality?.Current?.Index?.Replace ?? [];
+    const currentScaleName = airQuality?.scale ? AirQuality.GetNameFromScale(airQuality.scale) : undefined;
+    const isReplacementTarget = currentScaleName ? replacementTargets.includes(currentScaleName) : false;
+    const needInjectIndex = indexProvider !== "WeatherKit" && (isDirectAQIProvider(indexProvider) || needPollutants || isIndexUnavailable || isReplacementTarget);
     const injectedIndex = needInjectIndex ? await InjectIndex(indexSource, Settings, enviroments) : indexSource;
+    const isIndexInjected = needInjectIndex && hasUsableIndex(injectedIndex);
 
     // Step 4. Decide whether yesterday comparison should be recalculated, and inject it when unknown.
     const weatherKitComparison = airQuality?.previousDayComparison ?? AirQuality.Config.CompareCategoryIndexes.UNKNOWN;
-    const previousDayComparison = needInjectIndex && Settings?.AirQuality?.Comparison?.ReplaceWhenCurrentChange ? AirQuality.Config.CompareCategoryIndexes.UNKNOWN : weatherKitComparison;
+    const previousDayComparison = isIndexInjected && Settings?.AirQuality?.Comparison?.ReplaceWhenCurrentChange ? AirQuality.Config.CompareCategoryIndexes.UNKNOWN : weatherKitComparison;
     const needInjectComparison = previousDayComparison === AirQuality.Config.CompareCategoryIndexes.UNKNOWN;
-    const currentIndexProvider = needInjectIndex ? Settings?.AirQuality?.Current?.Index?.Provider : "WeatherKit";
-    const injectedComparison = needInjectComparison ? await InjectComparison(injectedIndex, currentIndexProvider, Settings, Caches, enviroments) : { ...injectedIndex, previousDayComparison: weatherKitComparison };
+    const currentIndexProvider = isIndexInjected ? Settings?.AirQuality?.Current?.Index?.Provider : "WeatherKit";
+    const injectedComparison = needInjectComparison ? await InjectComparison(isIndexInjected ? injectedIndex : airQuality, currentIndexProvider, Settings, Caches, enviroments) : { ...(isIndexInjected ? injectedIndex : airQuality), previousDayComparison: weatherKitComparison };
 
     // Step 5. Collect metadata from each stage and build the final providerName display text.
     const weatherKitMetadata = airQuality?.metadata;
@@ -502,22 +543,26 @@ async function InjectAirQuality(airQuality, Settings, Caches, enviroments) {
     const providers = [
         ...(weatherKitMetadata?.providerName && !weatherKitMetadata.temporarilyUnavailable ? [weatherKitMetadata.providerName] : []),
         ...(needPollutants && pollutantMetadata?.providerName && !pollutantMetadata.temporarilyUnavailable ? [`Pollutants: ${pollutantMetadata.providerName}`] : []),
-        ...(needInjectIndex && indexMetadata?.providerName && !indexMetadata.temporarilyUnavailable ? [`Index: ${AirQuality.appendScaleToProviderName(injectedIndex, Settings)}`] : []),
+        ...(isIndexInjected && indexMetadata?.providerName && !indexMetadata.temporarilyUnavailable ? [`Index: ${AirQuality.appendScaleToProviderName(injectedIndex, Settings)}`] : []),
         ...(needInjectComparison && comparisonMetadata?.providerName && !comparisonMetadata.temporarilyUnavailable ? [`Yesterday Comparison:\n${comparisonMetadata.providerName}`] : []),
     ];
 
     // Step 6. Merge metadata and remove providerLogo to prevent Weather from trying to render custom footer icons.
-    const { providerLogo, ...metadata } = (airQuality?.metadata ? airQuality.metadata : injectedPollutants?.metadata) ?? {};
+    const { providerLogo, ...metadata } = {
+        ...(airQuality?.metadata ?? {}),
+        ...(needPollutants && hasAvailableMetadata(injectedPollutants) ? injectedPollutants.metadata : {}),
+        ...(isIndexInjected && hasAvailableMetadata(injectedIndex) ? injectedIndex.metadata : {}),
+    };
 
     // Step 7. Merge output, prefer available injected results, and normalize metadata / pollutants / previousDayComparison.
     airQuality = {
         ...airQuality,
-        ...(injectedIndex?.metadata && !injectedIndex.metadata.temporarilyUnavailable ? injectedIndex : {}),
+        ...(isIndexInjected ? injectedIndex : {}),
         metadata: {
             ...metadata,
-            providerName: providers.join("\n"),
+            providerName: providers.join("\n") || metadata.providerName,
         },
-        pollutants: AirQuality.ConvertPollutants(airQuality, injectedPollutants, needInjectIndex, injectedIndex, Settings) ?? [],
+        pollutants: AirQuality.ConvertPollutants(airQuality, injectedPollutants, isIndexInjected, injectedIndex, Settings) ?? [],
         previousDayComparison: injectedComparison?.previousDayComparison ?? AirQuality.Config.CompareCategoryIndexes.UNKNOWN,
     };
     Console.debug(`airQuality: ${JSON.stringify(airQuality, null, 2)}`);
@@ -612,6 +657,11 @@ async function InjectIndex(airQuality, Settings, enviroments) {
         }
         case "Calculate": {
             if (!Array.isArray(airQuality?.pollutants) || airQuality.pollutants.length === 0) {
+                if (hasUsableIndex(airQuality)) {
+                    Console.warn("InjectIndex", "No pollutants available for Calculate, use provider AQI index");
+                    Console.info("✅ InjectIndex");
+                    return airQuality;
+                }
                 Console.warn("InjectIndex", "No pollutants available for Calculate, keep current air quality");
                 Console.info("✅ InjectIndex");
                 return airQuality;
