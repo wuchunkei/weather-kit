@@ -124,9 +124,10 @@ const airQualityCurrentPollutantsProvider: Arg = {
     options: [
         { key: "WeatherKit", label: "WeatherKit（不替换）" },
         { key: "WAQI", label: "WAQI" },
+        { key: "IQAir", label: "IQAir" },
         { key: "QWeather", label: "和风天气" },
     ],
-    description: "使用选定的数据源填补污染物数据。",
+    description: "使用选定的数据源填补污染物数据。IQAir 免费方案通常只返回 AQI，污染物浓度需要对应 API 方案支持。",
 };
 
 const airQualityCurrentPollutantsUnitsReplace: Arg = {
@@ -197,6 +198,7 @@ const airQualityCurrentIndexProvider: Arg = {
         { key: "WeatherKit", label: "WeatherKit（不替换）" },
         { key: "Calculate", label: "iRingo内置算法" },
         { key: "WAQI", label: "WAQI" },
+        { key: "IQAir", label: "IQAir（美标 EPA）" },
         { key: "QWeather", label: "和风天气（国标，12年2月版）" },
     ],
     description: "使用选定的数据源填补和替换空气质量指数。",
@@ -317,6 +319,22 @@ export const api: Arg[] = [
         type: "string",
         placeholder: "123456789123456789abcdefghijklmnopqrstuv",
         description: "WAQI API 令牌，填写此字段将自动使用WAQI高级API",
+    },
+    {
+        key: "API.IQAir.URL",
+        name: "[API] IQAir 请求地址",
+        defaultValue: "https://api.airvisual.com/v2/nearest_city",
+        type: "string",
+        placeholder: "https://api.airvisual.com/v2/nearest_city",
+        description: "IQAir AirVisual API 请求地址",
+    },
+    {
+        key: "API.IQAir.Token",
+        name: "[API] IQAir 令牌",
+        defaultValue: "",
+        type: "string",
+        placeholder: "123456789123456789abcdefghijklmnopqrstuv",
+        description: "IQAir AirVisual API 令牌",
     },
 ];
 

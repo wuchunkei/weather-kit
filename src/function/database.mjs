@@ -9,7 +9,7 @@ export default {
                 Comparison: { ReplaceWhenCurrentChange: false, Yesterday: { PollutantsProvider: "WeatherKit", IndexProvider: "WeatherKit" } },
                 Calculate: { Algorithm: "EU_EAQI", AllowOverRange: true },
             },
-            API: { WAQI: { Token: null }, QWeather: { Token: null, Host: "devapi.qweather.com" }, OpenWeather: { Token: null, URL: "https://api.openweathermap.org/data/4.0/onecall" } },
+            API: { WAQI: { Token: null }, IQAir: { Token: null, URL: "https://api.airvisual.com/v2/nearest_city" }, QWeather: { Token: null, Host: "devapi.qweather.com" }, OpenWeather: { Token: null, URL: "https://api.openweathermap.org/data/4.0/onecall" } },
         },
         Configs: {
             Availability: {

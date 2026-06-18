@@ -8,6 +8,7 @@ import providerNameToLogo from "../function/providerNameToLogo.mjs";
 import OpenWeather from "../class/OpenWeather.mjs";
 import QWeather from "../class/QWeather.mjs";
 import WAQI from "../class/WAQI.mjs";
+import IQAir from "../class/IQAir.mjs";
 import Weather from "../class/Weather.mjs";
 import AirQuality from "../class/AirQuality.mjs";
 /***************** Processing *****************/
@@ -89,6 +90,7 @@ export async function Response($request, $response) {
                                     openWeather: new OpenWeather(parameters, Settings?.API?.OpenWeather?.Token, Settings?.API?.OpenWeather?.URL),
                                     qWeather: new QWeather(parameters, Settings?.API?.QWeather?.Token, Settings?.API?.QWeather?.Host),
                                     waqi: new WAQI(parameters, Settings?.API?.WAQI?.Token),
+                                    iqAir: new IQAir(parameters, Settings?.API?.IQAir?.Token, Settings?.API?.IQAir?.URL),
                                     country: parameters.country,
                                 };
 
@@ -319,7 +321,8 @@ async function InjectAirQuality(airQuality, Settings, Caches, enviroments) {
     // Step3. 根据污染物补齐情况与替换配置，决定是否注入 AQI 指数
     const indexProvider = Settings?.AirQuality?.Current?.Index?.Provider ?? "Calculate";
     const indexSource = injectedPollutants ?? airQuality;
-    const needInjectIndex = indexProvider !== "WeatherKit" && (needPollutants || Settings?.AirQuality?.Current?.Index?.Replace?.includes(AirQuality.GetNameFromScale(airQuality?.scale)));
+    const isIndexUnavailable = airQuality?.metadata?.temporarilyUnavailable || !Number.isFinite(Number(airQuality?.index)) || Number(airQuality?.index) < 0;
+    const needInjectIndex = indexProvider !== "WeatherKit" && (needPollutants || isIndexUnavailable || Settings?.AirQuality?.Current?.Index?.Replace?.includes(AirQuality.GetNameFromScale(airQuality?.scale)));
     const injectedIndex = needInjectIndex ? await InjectIndex(indexSource, Settings, enviroments) : indexSource;
 
     // Step4. 计算昨日对比是否需要重算；若未知则注入昨日对比结果
@@ -370,6 +373,11 @@ async function InjectPollutants(airQuality, Settings, enviroments) {
         }
         case "WAQI": {
             const currentAirQuality = await FetchWAQIAirQuality(Settings, enviroments);
+            Console.info("✅ InjectPollutants");
+            return currentAirQuality;
+        }
+        case "IQAir": {
+            const currentAirQuality = await enviroments.iqAir.CurrentAirQuality();
             Console.info("✅ InjectPollutants");
             return currentAirQuality;
         }
@@ -433,6 +441,11 @@ async function InjectIndex(airQuality, Settings, enviroments) {
         }
         case "WAQI": {
             const currentAirQuality = await FetchWAQIAirQuality(Settings, enviroments);
+            Console.info("✅ InjectIndex");
+            return currentAirQuality;
+        }
+        case "IQAir": {
+            const currentAirQuality = await enviroments.iqAir.CurrentAirQuality();
             Console.info("✅ InjectIndex");
             return currentAirQuality;
         }

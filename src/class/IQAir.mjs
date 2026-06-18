@@ -1,0 +1,142 @@
+import { Console, fetch } from "@nsnanocat/util";
+import AirQuality from "../class/AirQuality.mjs";
+import providerNameToLogo from "../function/providerNameToLogo.mjs";
+
+export default class IQAir {
+    constructor(parameters, token, url = "https://api.airvisual.com/v2/nearest_city") {
+        this.Name = "IQAir";
+        this.Version = "1.0.0";
+        Console.log(`🟧 ${this.Name} v${this.Version}`);
+        this.endpoint = url || "https://api.airvisual.com/v2/nearest_city";
+        this.headers = { Accept: "application/json" };
+        this.token = token;
+        this.version = parameters.version;
+        this.language = parameters.language;
+        this.latitude = parameters.latitude;
+        this.longitude = parameters.longitude;
+        this.country = parameters.country;
+    }
+
+    static Pollutants = {
+        p2: "PM2_5",
+        p1: "PM10",
+        o3: "OZONE",
+        n2: "NO2",
+        s2: "SO2",
+        co: "CO",
+    };
+
+    static Units = {
+        ugm3: "MICROGRAMS_PER_CUBIC_METER",
+        "µg/m3": "MICROGRAMS_PER_CUBIC_METER",
+        "μg/m3": "MICROGRAMS_PER_CUBIC_METER",
+        mgm3: "MILLIGRAMS_PER_CUBIC_METER",
+        ppb: "PARTS_PER_BILLION",
+        ppm: "PARTS_PER_MILLION",
+    };
+
+    static Scale = AirQuality.Config.Scales.EPA_NowCast;
+
+    static #ToUnixTime(value, fallback) {
+        const timestamp = (new Date(value).getTime() / 1000) | 0;
+        if (!Number.isFinite(timestamp) || timestamp <= 0) return fallback;
+        return Math.min(timestamp, fallback);
+    }
+
+    static #CreatePollutants(pollution, units) {
+        return Object.entries(IQAir.Pollutants)
+            .map(([code, pollutantType]) => {
+                const amount = Number.parseFloat(pollution?.[code]?.conc);
+                const unit = IQAir.Units[units?.[code]];
+                if (!Number.isFinite(amount) || !unit) return;
+                return { amount, pollutantType, units: unit };
+            })
+            .filter(Boolean);
+    }
+
+    static FromBody(body, parameters = {}) {
+        const timeStamp = (Date.now() / 1000) | 0;
+        const data = body?.data;
+        const pollution = data?.current?.pollution;
+        const index = Number.parseInt(pollution?.aqius, 10);
+        const categoryIndex = AirQuality.CategoryIndex(index, IQAir.Scale.categories);
+
+        if (body?.status !== "success" || !Number.isFinite(index) || categoryIndex < 0) {
+            return IQAir.Unavailable(parameters, body?.status || "unavailable");
+        }
+
+        const [longitude, latitude] = data?.location?.coordinates ?? [];
+        const stationName = data?.name || data?.city;
+        const providerName = ["IQAir", stationName ? `监测站：${stationName}` : undefined, data?.city ? `城市：${data.city}` : undefined].filter(Boolean).join("\n");
+
+        return {
+            metadata: {
+                attributionUrl: "https://www.iqair.com/air-quality-map",
+                expireTime: timeStamp + 60 * 60,
+                language: `${parameters.language}-${parameters.country}`,
+                latitude: Number.parseFloat(latitude ?? parameters.latitude),
+                longitude: Number.parseFloat(longitude ?? parameters.longitude),
+                providerLogo: providerNameToLogo("IQAir", parameters.version),
+                providerName,
+                readTime: timeStamp,
+                reportedTime: IQAir.#ToUnixTime(pollution?.ts, timeStamp),
+                temporarilyUnavailable: false,
+                sourceType: "STATION",
+            },
+            categoryIndex,
+            index,
+            isSignificant: categoryIndex >= IQAir.Scale.categories.significantIndex,
+            pollutants: IQAir.#CreatePollutants(pollution, data?.units),
+            previousDayComparison: AirQuality.Config.CompareCategoryIndexes.UNKNOWN,
+            primaryPollutant: IQAir.Pollutants[pollution?.mainus] || "NOT_AVAILABLE",
+            scale: AirQuality.ToWeatherKitScale(IQAir.Scale.weatherKitScale),
+        };
+    }
+
+    static Unavailable(parameters = {}, reason = "unavailable") {
+        const timeStamp = (Date.now() / 1000) | 0;
+        return {
+            metadata: {
+                attributionUrl: "https://www.iqair.com/air-quality-map",
+                expireTime: timeStamp + 60 * 60,
+                language: `${parameters.language}-${parameters.country}`,
+                latitude: parameters.latitude,
+                longitude: parameters.longitude,
+                providerLogo: providerNameToLogo("IQAir", parameters.version),
+                providerName: `IQAir${reason ? `\n${reason}` : ""}`,
+                readTime: timeStamp,
+                reportedTime: timeStamp,
+                temporarilyUnavailable: true,
+                sourceType: "STATION",
+            },
+            pollutants: [],
+            previousDayComparison: AirQuality.Config.CompareCategoryIndexes.UNKNOWN,
+        };
+    }
+
+    async CurrentAirQuality() {
+        Console.info("☑️ CurrentAirQuality");
+        if (!this.token) {
+            Console.warn("IQAir", "Missing API token");
+            Console.info("✅ CurrentAirQuality");
+            return IQAir.Unavailable(this, "missing_api_key");
+        }
+
+        const url = new URL(this.endpoint);
+        url.searchParams.set("lat", this.latitude);
+        url.searchParams.set("lon", this.longitude);
+        url.searchParams.set("key", this.token);
+
+        let airQuality;
+        try {
+            const body = await fetch({ url: url.toString(), headers: this.headers }).then(response => JSON.parse(response?.body ?? "{}"));
+            airQuality = IQAir.FromBody(body, this);
+        } catch (error) {
+            Console.warn("IQAir.CurrentAirQuality", error);
+            airQuality = IQAir.Unavailable(this, "request_failed");
+        } finally {
+            Console.info("✅ CurrentAirQuality");
+        }
+        return airQuality;
+    }
+}

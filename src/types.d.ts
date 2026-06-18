@@ -76,18 +76,19 @@ export interface Settings {
             /**
                  * [今日污染物] 数据源
                  *
-                 * 使用选定的数据源填补污染物数据。
+                 * 使用选定的数据源填补污染物数据。IQAir 免费方案通常只返回 AQI，污染物浓度需要对应 API 方案支持。
                  *
                  * @remarks
                  *
                  * Possible values:
                  * - `'WeatherKit'` - WeatherKit（不替换）
                  * - `'WAQI'` - WAQI
+                 * - `'IQAir'` - IQAir
                  * - `'QWeather'` - 和风天气
                  *
                  * @defaultValue "WeatherKit"
                  */
-                Provider?: 'WeatherKit' | 'WAQI' | 'QWeather';
+                Provider?: 'WeatherKit' | 'WAQI' | 'IQAir' | 'QWeather';
             Units?: {
                 /**
                  * [今日污染物 - 单位转换] 替换目标
@@ -168,11 +169,12 @@ export interface Settings {
                  * - `'WeatherKit'` - WeatherKit（不替换）
                  * - `'Calculate'` - iRingo内置算法
                  * - `'WAQI'` - WAQI
+                 * - `'IQAir'` - IQAir（美标 EPA）
                  * - `'QWeather'` - 和风天气（国标，12年2月版）
                  *
                  * @defaultValue "WeatherKit"
                  */
-                Provider?: 'WeatherKit' | 'Calculate' | 'WAQI' | 'QWeather';
+                Provider?: 'WeatherKit' | 'Calculate' | 'WAQI' | 'IQAir' | 'QWeather';
                 /**
                  * [今日空气指数] 强制主要污染物
                  *
@@ -295,6 +297,24 @@ export interface Settings {
          * [API] WAQI 令牌
          *
          * WAQI API 令牌，填写此字段将自动使用WAQI高级API
+         *
+         * @defaultValue ""
+         */
+        Token?: string;
+};
+    IQAir?: {
+        /**
+         * [API] IQAir 请求地址
+         *
+         * IQAir AirVisual API 请求地址
+         *
+         * @defaultValue "https://api.airvisual.com/v2/nearest_city"
+         */
+        URL?: string;
+        /**
+         * [API] IQAir 令牌
+         *
+         * IQAir AirVisual API 令牌
          *
          * @defaultValue ""
          */
