@@ -16,6 +16,7 @@
   * Reduced WeatherKit response-script pressure by processing replacement datasets sequentially and lazily creating third-party provider clients only when needed.
   * Reduced AQI loading time by avoiding extra pollutant fallback requests when Provider Default AQI is selected, and by using the one-request WAQI nearest-station flow when no WAQI token is configured.
   * Added a temporary response logger for WeatherKit severe weather notification channel JSON to diagnose next-hour precipitation notification support.
+  * Added short-lived AQI provider caching, an optional pollutant-source selector, pollutant unit guards, and stricter next-hour fallback validation.
 
 ## 3.1.6
 

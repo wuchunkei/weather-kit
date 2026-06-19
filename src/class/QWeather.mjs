@@ -39,7 +39,9 @@ export default class QWeather {
             null: "NOT_AVAILABLE",
         },
         Units: {
-            "μg/m3": "MICROGRAMS_PER_CUBIC_METER",
+            "ug/m3": "MICROGRAMS_PER_CUBIC_METER",
+            "\u00b5g/m3": "MICROGRAMS_PER_CUBIC_METER",
+            "\u03bcg/m3": "MICROGRAMS_PER_CUBIC_METER",
             "mg/m3": "MILLIGRAMS_PER_CUBIC_METER",
             ppb: "PARTS_PER_BILLION",
             ppm: "PARTS_PER_MILLION",
@@ -679,11 +681,13 @@ export default class QWeather {
         Console.debug(`pollutantsObj: ${JSON.stringify(pollutantsObj)}`);
 
         // TODO: what is ppmC? https://dev.qweather.com/docs/resource/air-info/#pollutants
-        const pollutants = pollutantsObj
-            .filter(pollutant => pollutant.concentration.unit !== "ppmC")
+        const pollutants = (Array.isArray(pollutantsObj) ? pollutantsObj : [])
+            .filter(pollutant => pollutant?.concentration && pollutant.concentration.unit !== "ppmC")
             .map(({ code, concentration, subIndexes = [] }) => {
                 const { value, unit } = concentration;
                 const pollutantType = this.#Config.Pollutants[code];
+                if (!pollutantType || pollutantType === "NOT_AVAILABLE") return undefined;
+                if (!Number.isFinite(Number(value))) return undefined;
                 const indexObj = subIndexes.find(subIndex => subIndex.code === scaleCode);
                 if (scaleCode && !indexObj) Console.warn("CreatePollutants", `No index for ${pollutantType} was found for required scale`);
 
@@ -695,9 +699,11 @@ export default class QWeather {
                     case friendlyUnits.PARTS_PER_MILLION:
                         return { pollutantType, amount: AirQuality.ConvertUnit(value, ppm, ppb), units: ppb, index: scaleCode ? (indexObj?.aqi ?? -1) : undefined };
                     default:
-                        return { pollutantType, amount: value, units: this.#Config.Units[unit], index: scaleCode ? (indexObj?.aqi ?? -1) : undefined };
+                        if (!this.#Config.Units[unit]) return undefined;
+                        return { pollutantType, amount: Number(value), units: this.#Config.Units[unit], index: scaleCode ? (indexObj?.aqi ?? -1) : undefined };
                 }
-            });
+            })
+            .filter(Boolean);
 
         Console.info("✅ CreatePollutants");
         return pollutants;
@@ -714,13 +720,14 @@ export default class QWeather {
         Console.debug(`pollutantsObj: ${JSON.stringify(pollutantsObj)}`);
 
         const { mgm3, ugm3 } = AirQuality.Config.Units.WeatherKit;
-        const pollutants = Object.entries(pollutantsObj)
+        const pollutants = Object.entries(pollutantsObj ?? {})
             .map(([name, amount]) => {
                 const parsedAmount = Number.parseFloat(amount);
+                if (!Number.isFinite(parsedAmount) || !this.#Config.Pollutants[name]) return null;
                 switch (name) {
                     case "co":
                         return {
-                            amount: AirQuality.ConvertUnit(parsedAmount ?? -1, mgm3, ugm3),
+                            amount: AirQuality.ConvertUnit(parsedAmount, mgm3, ugm3),
                             pollutantType: this.#Config.Pollutants[name],
                             units: ugm3,
                         };
@@ -732,7 +739,7 @@ export default class QWeather {
                     case "pm25":
                     case "pm10":
                         return {
-                            amount: parsedAmount ?? -1,
+                            amount: parsedAmount,
                             pollutantType: this.#Config.Pollutants[name],
                             units: ugm3,
                         };

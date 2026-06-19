@@ -146,6 +146,22 @@ const airQualityProvider: Arg = {
     description: "Use the selected provider to replace AQI. IQAir results can be supplemented by the configured fallback providers when pollutant details are missing.",
 };
 
+const airQualityPollutantsProvider: Arg = {
+    key: "AirQuality.Pollutants.Provider",
+    name: "[Air Quality] Pollutants Source",
+    defaultValue: "Auto",
+    type: "string",
+    options: [
+        { key: "Auto", label: "Auto" },
+        { key: "IndexProvider", label: "Same as AQI Source" },
+        { key: "WeatherKit", label: "WeatherKit" },
+        { key: "IQAir", label: "IQAir" },
+        { key: "QWeather", label: "QWeather" },
+        { key: "WAQI", label: "WAQI" },
+    ],
+    description: "Choose where pollutant concentrations come from. Auto avoids extra requests for Provider Default AQI, and fetches fallback pollutants only when US or China AQI recalculation needs them.",
+};
+
 const airQualityStandard: Arg = {
     key: "AirQuality.Standard",
     name: "[Air Quality] AQI Standard",
@@ -181,8 +197,8 @@ const airQualityFallbackProvider: Arg = {
     description: "Fallback order used when the primary AQI provider is unavailable. Pollutant details are fetched from fallback providers only when a forced AQI standard needs them.",
 };
 
-export const airQuality = [airQualityReplace, airQualityProvider, airQualityStandard, airQualityRequestTimeout, airQualityFallbackProvider];
-const airQualityFull = [airQualityReplace, airQualityProvider, airQualityStandard, airQualityRequestTimeout, airQualityFallbackProvider];
+export const airQuality = [airQualityReplace, airQualityProvider, airQualityPollutantsProvider, airQualityStandard, airQualityRequestTimeout, airQualityFallbackProvider];
+const airQualityFull = [airQualityReplace, airQualityProvider, airQualityPollutantsProvider, airQualityStandard, airQualityRequestTimeout, airQualityFallbackProvider];
 
 export const api: Arg[] = [
     {

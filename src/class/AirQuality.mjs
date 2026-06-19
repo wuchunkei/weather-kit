@@ -90,28 +90,35 @@ export default class AirQuality {
 
         const friendlyUnits = AirQuality.Config.Units.Friendly;
 
-        const convertedPollutants = pollutants.map(pollutant => {
-            const pollutantScale = pollutantScales[pollutant.pollutantType];
+        const convertedPollutants = pollutants
+            .map(pollutant => {
+                const pollutantScale = pollutantScales[pollutant.pollutantType];
 
-            if (!pollutantScale) {
-                Console.info("ConvertUnits", `No scale for ${pollutant.pollutantType}, skip`);
-                return pollutant;
-            }
+                if (!pollutantScale) {
+                    Console.info("ConvertUnits", `No scale for ${pollutant.pollutantType}, skip`);
+                    return pollutant;
+                }
 
-            Console.info("ConvertUnits", `Converting ${pollutant.pollutantType}`);
-            const amount = AirQuality.ConvertUnit(pollutant.amount, pollutant.units, pollutantScale.units, stpConversionFactors?.[pollutant.pollutantType] || -1, pollutantScale?.stpConversionFactor || -1);
-            if (amount < 0) {
-                Console.error(
-                    "ConvertUnits",
-                    `Unable to convert units for ${pollutant.pollutantType}`,
-                    `${pollutant.amount} ${friendlyUnits[pollutant.units] ?? pollutant.units} (STP conversion factor: ${stpConversionFactors?.[pollutant.pollutantType] || -1}) -> ${amount} ${friendlyUnits[pollutantScale.units] ?? pollutantScale.units} (STP conversion factor: ${pollutantScale?.stpConversionFactor || -1})`,
-                );
-                return pollutant;
-            }
+                if (!pollutant.units || !Number.isFinite(Number(pollutant.amount))) {
+                    Console.warn("ConvertUnits", `Skip invalid pollutant ${pollutant.pollutantType}`, `amount: ${pollutant.amount}`, `units: ${pollutant.units}`);
+                    return undefined;
+                }
 
-            Console.info("ConvertUnits", `Converted ${pollutant.pollutantType}: ${amount} ${friendlyUnits[pollutantScale.units] ?? pollutantScale.units}`);
-            return { ...pollutant, amount, units: pollutantScale.units };
-        });
+                Console.info("ConvertUnits", `Converting ${pollutant.pollutantType}`);
+                const amount = AirQuality.ConvertUnit(pollutant.amount, pollutant.units, pollutantScale.units, stpConversionFactors?.[pollutant.pollutantType] || -1, pollutantScale?.stpConversionFactor || -1);
+                if (amount < 0) {
+                    Console.error(
+                        "ConvertUnits",
+                        `Unable to convert units for ${pollutant.pollutantType}`,
+                        `${pollutant.amount} ${friendlyUnits[pollutant.units] ?? pollutant.units} (STP conversion factor: ${stpConversionFactors?.[pollutant.pollutantType] || -1}) -> ${amount} ${friendlyUnits[pollutantScale.units] ?? pollutantScale.units} (STP conversion factor: ${pollutantScale?.stpConversionFactor || -1})`,
+                    );
+                    return pollutant;
+                }
+
+                Console.info("ConvertUnits", `Converted ${pollutant.pollutantType}: ${amount} ${friendlyUnits[pollutantScale.units] ?? pollutantScale.units}`);
+                return { ...pollutant, amount, units: pollutantScale.units };
+            })
+            .filter(Boolean);
         Console.info("✅ ConvertUnits");
         return convertedPollutants;
     }
@@ -508,15 +515,15 @@ export default class AirQuality {
      * Index list for each standard pollutant.
      * - When a pollutant required by the standard is missing, that pollutant returns index=-1.
      */
-    static #PollutantsToIndexes(pollutants = [], pollutantScales) {
-        return pollutants.map(pollutant => {
+    static #PollutantsToIndexes(pollutants, pollutantScales) {
+        return (Array.isArray(pollutants) ? pollutants : []).map(pollutant => {
             const index = AirQuality.#ComputePollutantIndex(pollutant, pollutant.pollutantType, pollutantScales?.[pollutant.pollutantType], AirQuality.Config.Units.Friendly);
             pollutant.index = index;
             return pollutant;
         });
     }
 
-    static PrimaryPollutant(pollutants = [], categories) {
+    static PrimaryPollutant(pollutants, categories) {
         Console.info("☑️ PrimaryPollutant");
         const failedPollutant = { pollutantType: "NOT_AVAILABLE", index: -1, categoryIndex: -1 };
 

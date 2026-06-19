@@ -1,4 +1,4 @@
-import { Console, fetch } from "@nsnanocat/util";
+import { Console, fetch, Storage } from "@nsnanocat/util";
 import * as flatbuffers from "flatbuffers";
 import AirQuality from "../class/AirQuality.mjs";
 import HKO from "../class/HKO.mjs";
@@ -15,6 +15,11 @@ import setENV from "../function/setENV.mjs";
 
 const ORIGINAL_COUNTRY_HEADER = "X-iRingo-Original-Country";
 const ORIGINAL_STOREFRONT_HEADER = "X-iRingo-Original-Store-Front";
+const AIR_QUALITY_CACHE_KEY = "iRingo.WeatherKit.RuntimeCaches";
+const AIR_QUALITY_CACHE_TTL = 10 * 60 * 1000;
+const AIR_QUALITY_FAILURE_CACHE_TTL = 60 * 1000;
+const AIR_QUALITY_PROVIDERS = ["WeatherKit", "IQAir", "QWeather", "WAQI"];
+const AIR_QUALITY_POLLUTANTS_PROVIDERS = ["Auto", "IndexProvider", ...AIR_QUALITY_PROVIDERS];
 
 function getHeader(headers, name) {
     const lowerName = name.toLowerCase();
@@ -447,7 +452,7 @@ async function InjectForecastNextHour(forecastNextHour, Settings, enviroments) {
             break;
         case "OpenWeather": {
             newForecastNextHour = await enviroments.openWeather.Minutely();
-            if (!hasAvailableProviderData(newForecastNextHour)) newForecastNextHour = await FetchOpenWeatherFallback("Minutely", Settings?.NextHour?.Fallback?.Provider, enviroments, "InjectForecastNextHour");
+            if (!hasUsableForecastNextHour(newForecastNextHour)) newForecastNextHour = await FetchOpenWeatherFallback("Minutely", Settings?.NextHour?.Fallback?.Provider, enviroments, "InjectForecastNextHour");
             break;
         }
         case "QWeather": {
@@ -458,7 +463,7 @@ async function InjectForecastNextHour(forecastNextHour, Settings, enviroments) {
             break;
         }
     }
-    if (newForecastNextHour?.metadata) {
+    if (hasUsableForecastNextHour(newForecastNextHour)) {
         newForecastNextHour.metadata = { ...forecastNextHour?.metadata, ...newForecastNextHour.metadata };
         forecastNextHour = { ...forecastNextHour, ...newForecastNextHour };
     }
@@ -487,11 +492,12 @@ async function InjectAirQuality(airQuality, Settings, enviroments) {
         return ApplyAirQualityStandard(AirQuality.FixPollutantsUnits(airQuality), Settings);
     }
 
-    const injectedAirQuality = ApplyAirQualityStandard(await FetchAirQualityWithFallback(provider, getAirQualityFallbackProviders(Settings, provider), enviroments, Settings), Settings);
+    const originalAirQuality = normalizeAirQualityData(AirQuality.FixPollutantsUnits(airQuality));
+    const injectedAirQuality = ApplyAirQualityStandard(await FetchAirQualityWithFallback(provider, getAirQualityFallbackProviders(Settings, provider), enviroments, Settings, originalAirQuality), Settings);
     if (!hasAvailableProviderData(injectedAirQuality)) {
         Console.warn("InjectAirQuality", "All configured air-quality providers are unavailable");
         Console.info("✅ InjectAirQuality");
-        return airQuality;
+        return originalAirQuality;
     }
 
     const { providerLogo: _providerLogo, ...metadata } = {
@@ -546,12 +552,41 @@ function hasAvailableProviderData(data) {
     return !!(data?.metadata && !data.metadata.temporarilyUnavailable);
 }
 
+function hasUsableForecastNextHour(data) {
+    if (!hasAvailableProviderData(data) || !Array.isArray(data?.minutes) || data.minutes.length === 0) return false;
+    return data.minutes.some(minute => Number.isFinite(Number(minute?.startTime)) && Number.isFinite(Number(minute?.precipitationIntensity)));
+}
+
+function getValidPollutants(data) {
+    const validUnits = new Set(Object.values(AirQuality.Config.Units.WeatherKit));
+    return (Array.isArray(data?.pollutants) ? data.pollutants : [])
+        .filter(pollutant => {
+            const amount = Number(pollutant?.amount);
+            return pollutant?.pollutantType && pollutant.pollutantType !== "NOT_AVAILABLE" && Number.isFinite(amount) && validUnits.has(pollutant?.units);
+        })
+        .map(pollutant => ({ ...pollutant, amount: Number(pollutant.amount) }));
+}
+
+function normalizeAirQualityData(data) {
+    if (!data) return data;
+    return { ...data, pollutants: getValidPollutants(data) };
+}
+
 function hasPollutants(data) {
-    return Array.isArray(data?.pollutants) && data.pollutants.length > 0;
+    return getValidPollutants(data).length > 0;
+}
+
+function getAirQualityProviderValue(provider, fallback = "WeatherKit") {
+    return AIR_QUALITY_PROVIDERS.includes(provider) ? provider : fallback;
 }
 
 function getAirQualityProvider(Settings) {
-    return Settings?.AirQuality?.Provider ?? Settings?.AirQuality?.Current?.Index?.Provider ?? "WeatherKit";
+    return getAirQualityProviderValue(Settings?.AirQuality?.Provider ?? Settings?.AirQuality?.Current?.Index?.Provider, "WeatherKit");
+}
+
+function getAirQualityPollutantsProvider(Settings) {
+    const provider = Settings?.AirQuality?.Pollutants?.Provider ?? Settings?.AirQuality?.Current?.Pollutants?.Provider ?? "Auto";
+    return AIR_QUALITY_POLLUTANTS_PROVIDERS.includes(provider) ? provider : "Auto";
 }
 
 function getAirQualityStandard(Settings) {
@@ -567,11 +602,11 @@ function getAirQualityRequestTimeout(Settings) {
 
 function ApplyAirQualityStandard(airQuality, Settings) {
     const standard = getAirQualityStandard(Settings);
-    if (standard === "Provider") return airQuality;
+    if (standard === "Provider") return normalizeAirQualityData(airQuality);
 
     const algorithm = standard === "CN" ? "WAQI_InstantCast_CN" : "WAQI_InstantCast_US";
     const label = standard === "CN" ? "China AQI (HJ 633-2012)" : "US AQI (EPA NowCast)";
-    const fixedAirQuality = AirQuality.FixPollutantsUnits(airQuality);
+    const fixedAirQuality = normalizeAirQualityData(AirQuality.FixPollutantsUnits(airQuality));
 
     if (!hasPollutants(fixedAirQuality)) {
         Console.warn("ApplyAirQualityStandard", `No pollutants available, keep provider AQI for ${label}`);
@@ -607,8 +642,72 @@ function getAirQualityFallbackProviders(Settings, provider) {
     return fallbackProviders.length ? fallbackProviders : provider === "IQAir" ? ["QWeather", "WAQI"] : ["WAQI"];
 }
 
+function uniqueProviders(providers = []) {
+    return providers.filter((provider, index, array) => provider && AIR_QUALITY_PROVIDERS.includes(provider) && array.indexOf(provider) === index);
+}
+
+function formatCoordinate(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number.toFixed(3) : `${value ?? ""}`;
+}
+
+function getAirQualityCacheKey(provider, enviroments) {
+    return [provider, enviroments.country ?? "", formatCoordinate(enviroments.latitude), formatCoordinate(enviroments.longitude)].join(":");
+}
+
+function getAirQualityCacheStore() {
+    const store = Storage.getItem(AIR_QUALITY_CACHE_KEY, {});
+    return store && typeof store === "object" && !Array.isArray(store) ? store : {};
+}
+
+function readCachedAirQuality(provider, enviroments) {
+    const store = getAirQualityCacheStore();
+    const key = getAirQualityCacheKey(provider, enviroments);
+    const cached = store?.[key];
+    if (!cached) return undefined;
+
+    if (Number(cached.expiresAt) <= Date.now()) {
+        delete store[key];
+        Storage.setItem(AIR_QUALITY_CACHE_KEY, store);
+        return undefined;
+    }
+
+    Console.info("FetchAirQualityProvider", `${provider} cache hit`);
+    return cached.airQuality;
+}
+
+function writeCachedAirQuality(provider, enviroments, airQuality) {
+    const store = getAirQualityCacheStore();
+    const key = getAirQualityCacheKey(provider, enviroments);
+    const ttl = hasAvailableProviderData(airQuality) ? AIR_QUALITY_CACHE_TTL : AIR_QUALITY_FAILURE_CACHE_TTL;
+    store[key] = {
+        expiresAt: Date.now() + ttl,
+        airQuality,
+    };
+    Storage.setItem(AIR_QUALITY_CACHE_KEY, store);
+}
+
+function unavailableAirQuality(provider, enviroments, reason = "unavailable") {
+    const timeStamp = (Date.now() / 1000) | 0;
+    return {
+        metadata: {
+            expireTime: timeStamp + 60,
+            language: `${enviroments.language ?? "en"}-${enviroments.country ?? "US"}`,
+            latitude: enviroments.latitude,
+            longitude: enviroments.longitude,
+            providerName: `${provider}\n${reason}`,
+            readTime: timeStamp,
+            reportedTime: timeStamp,
+            temporarilyUnavailable: true,
+            sourceType: "STATION",
+        },
+        pollutants: [],
+        previousDayComparison: AirQuality.Config.CompareCategoryIndexes.UNKNOWN,
+    };
+}
+
 function createProviderEnviroments(parameters, Settings) {
-    const enviroments = { country: parameters.country };
+    const enviroments = { country: parameters.country, language: parameters.language, latitude: parameters.latitude, longitude: parameters.longitude };
     const airQualityRequestTimeout = getAirQualityRequestTimeout(Settings);
     Object.defineProperties(enviroments, {
         openWeather: {
@@ -652,10 +751,15 @@ async function FetchProviderData(method, provider, enviroments) {
 }
 
 async function FetchAirQualityProvider(provider, enviroments, Settings) {
+    if (provider === "WeatherKit") return undefined;
+
+    const cachedAirQuality = readCachedAirQuality(provider, enviroments);
+    if (cachedAirQuality) return cachedAirQuality;
+
     const timeout = getAirQualityRequestTimeout(Settings);
     let timer;
     try {
-        return await Promise.race([
+        const airQuality = await Promise.race([
             (async () => {
                 switch (provider) {
                     case "IQAir":
@@ -670,24 +774,28 @@ async function FetchAirQualityProvider(provider, enviroments, Settings) {
                 }
             })().catch(error => {
                 Console.warn("FetchAirQualityProvider", `${provider} failed: ${error}`);
-                return undefined;
+                return unavailableAirQuality(provider, enviroments, "request_failed");
             }),
             new Promise(resolve => {
                 timer = setTimeout(() => {
                     Console.warn("FetchAirQualityProvider", `${provider} timed out after ${timeout}ms`);
-                    resolve(undefined);
+                    resolve(unavailableAirQuality(provider, enviroments, "timeout"));
                 }, timeout);
             }),
         ]);
+        const normalizedAirQuality = normalizeAirQualityData(airQuality);
+        writeCachedAirQuality(provider, enviroments, normalizedAirQuality);
+        return normalizedAirQuality;
     } finally {
         if (timer) clearTimeout(timer);
     }
 }
 
-async function FetchAirQualityWithFallback(provider, fallbackProviders, enviroments, Settings) {
-    Console.info("☑️ FetchAirQualityWithFallback", `provider: ${provider}`, `fallback: ${fallbackProviders.join(",")}`, `timeout: ${getAirQualityRequestTimeout(Settings)}ms`);
-    const providers = [provider, ...fallbackProviders];
-    const needsPollutants = getAirQualityStandard(Settings) !== "Provider";
+async function FetchAirQualityWithFallback(provider, fallbackProviders, enviroments, Settings, originalAirQuality) {
+    const providers = uniqueProviders([provider, ...fallbackProviders]);
+    const pollutantsProvider = getAirQualityPollutantsProvider(Settings);
+    Console.info("☑️ FetchAirQualityWithFallback", `provider: ${provider}`, `fallback: ${fallbackProviders.join(",")}`, `pollutantsProvider: ${pollutantsProvider}`, `timeout: ${getAirQualityRequestTimeout(Settings)}ms`);
+    const needsPollutants = getAirQualityStandard(Settings) !== "Provider" || !["Auto", "IndexProvider"].includes(pollutantsProvider);
     const attempts = [];
 
     for (const currentProvider of providers) {
@@ -703,10 +811,23 @@ async function FetchAirQualityWithFallback(provider, fallbackProviders, envirome
         return attempts.find(({ airQuality }) => airQuality?.metadata)?.airQuality;
     }
 
-    let result = indexAttempt.airQuality;
-    let pollutantAttempt = hasPollutants(result) ? indexAttempt : attempts.find(({ airQuality }) => hasAvailableProviderData(airQuality) && hasPollutants(airQuality));
+    let result = normalizeAirQualityData(indexAttempt.airQuality);
+    let pollutantAttempt = hasPollutants(result) ? indexAttempt : undefined;
 
-    if (needsPollutants && !pollutantAttempt && !hasPollutants(result)) {
+    if (!pollutantAttempt && pollutantsProvider === "WeatherKit" && hasPollutants(originalAirQuality)) {
+        pollutantAttempt = { provider: "WeatherKit", airQuality: originalAirQuality };
+    }
+
+    if (!pollutantAttempt && !["Auto", "IndexProvider", "WeatherKit"].includes(pollutantsProvider)) {
+        const airQuality = attempts.find(attempt => attempt.provider === pollutantsProvider)?.airQuality ?? (await FetchAirQualityProvider(pollutantsProvider, enviroments, Settings));
+        if (hasAvailableProviderData(airQuality) && hasPollutants(airQuality)) pollutantAttempt = { provider: pollutantsProvider, airQuality };
+    }
+
+    if (needsPollutants && !pollutantAttempt && pollutantsProvider === "Auto" && hasPollutants(originalAirQuality)) {
+        pollutantAttempt = { provider: "WeatherKit", airQuality: originalAirQuality };
+    }
+
+    if (needsPollutants && !pollutantAttempt && pollutantsProvider === "Auto") {
         for (const currentProvider of providers.filter(provider => !attempts.some(attempt => attempt.provider === provider))) {
             const airQuality = await FetchAirQualityProvider(currentProvider, enviroments, Settings);
             if (hasAvailableProviderData(airQuality) && hasPollutants(airQuality)) {
@@ -714,16 +835,20 @@ async function FetchAirQualityWithFallback(provider, fallbackProviders, envirome
                 break;
             }
         }
+        if (!pollutantAttempt) {
+            pollutantAttempt = attempts.find(({ airQuality }) => hasAvailableProviderData(airQuality) && hasPollutants(airQuality));
+        }
     }
 
     if (pollutantAttempt && pollutantAttempt.provider !== indexAttempt.provider) {
+        const pollutants = getValidPollutants(pollutantAttempt.airQuality);
         result = {
             ...result,
             metadata: {
                 ...result.metadata,
                 providerName: [result.metadata?.providerName, `Pollutants: ${pollutantAttempt.airQuality.metadata?.providerName}`].filter(Boolean).join("\n"),
             },
-            pollutants: pollutantAttempt.airQuality.pollutants,
+            pollutants,
         };
     }
 

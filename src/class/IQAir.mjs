@@ -30,8 +30,9 @@ export default class IQAir {
 
     static Units = {
         ugm3: "MICROGRAMS_PER_CUBIC_METER",
-        "µg/m3": "MICROGRAMS_PER_CUBIC_METER",
-        "μg/m3": "MICROGRAMS_PER_CUBIC_METER",
+        "ug/m3": "MICROGRAMS_PER_CUBIC_METER",
+        "\u00b5g/m3": "MICROGRAMS_PER_CUBIC_METER",
+        "\u03bcg/m3": "MICROGRAMS_PER_CUBIC_METER",
         mgm3: "MILLIGRAMS_PER_CUBIC_METER",
         ppb: "PARTS_PER_BILLION",
         ppm: "PARTS_PER_MILLION",
