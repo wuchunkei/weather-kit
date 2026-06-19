@@ -118,6 +118,48 @@ const nextHourFallbackProvider: Arg = {
 export const nextHour = [nextHourProvider, nextHourFallbackProvider];
 const nextHourFull = [nextHourProvider, nextHourFallbackProvider];
 
+const airQualityReplace: Arg = {
+    key: "AirQuality.Replace",
+    name: "[Air Quality] Replacement Scope",
+    defaultValue: "CN",
+    type: "string",
+    options: [
+        { key: "CN", label: "Mainland China" },
+        { key: "CN|HK|MO|TW", label: "Mainland China, Hong Kong, Macau, and Taiwan" },
+        { key: ".*", label: "All Regions" },
+    ],
+    description: "Replace air-quality data only for matching regions.",
+};
+
+const airQualityProvider: Arg = {
+    key: "AirQuality.Provider",
+    name: "[Air Quality] Data Source",
+    defaultValue: "WeatherKit",
+    type: "string",
+    options: [
+        { key: "WeatherKit", label: "WeatherKit (No replacement)" },
+        { key: "IQAir", label: "IQAir" },
+        { key: "QWeather", label: "QWeather" },
+        { key: "WAQI", label: "WAQI" },
+    ],
+    description: "Use the selected provider to replace AQI. IQAir results can be supplemented by the configured fallback providers when pollutant details are missing.",
+};
+
+const airQualityFallbackProvider: Arg = {
+    key: "AirQuality.Fallback.Provider",
+    name: "[Air Quality] Fallback Sources",
+    defaultValue: ["QWeather", "WAQI"],
+    type: "array",
+    options: [
+        { key: "QWeather", label: "QWeather" },
+        { key: "WAQI", label: "WAQI" },
+    ],
+    description: "Fallback order used when the primary AQI provider is unavailable or lacks pollutant concentration details.",
+};
+
+export const airQuality = [airQualityReplace, airQualityProvider, airQualityFallbackProvider];
+const airQualityFull = [airQualityReplace, airQualityProvider, airQualityFallbackProvider];
+
 export const api: Arg[] = [
     {
         key: "API.OpenWeather.URL",
@@ -150,6 +192,30 @@ export const api: Arg[] = [
         type: "string",
         placeholder: "123456789123456789abcdefghijklmnopqrstuv",
         description: "QWeather API token",
+    },
+    {
+        key: "API.IQAir.URL",
+        name: "[API] IQAir Request URL",
+        defaultValue: "https://api.airvisual.com/v2/nearest_city",
+        type: "string",
+        placeholder: "https://api.airvisual.com/v2/nearest_city",
+        description: "IQAir AirVisual API request URL",
+    },
+    {
+        key: "API.IQAir.Token",
+        name: "[API] IQAir Token",
+        defaultValue: "",
+        type: "string",
+        placeholder: "123456789123456789abcdefghijklmnopqrstuv",
+        description: "IQAir AirVisual API token",
+    },
+    {
+        key: "API.WAQI.Token",
+        name: "[API] WAQI Token",
+        defaultValue: "",
+        type: "string",
+        placeholder: "123456789123456789abcdefghijklmnopqrstuv",
+        description: "WAQI API token. Leave empty to let the script try the public nearest-station flow.",
     },
 ];
 
@@ -188,5 +254,5 @@ export const logLevel: Arg[] = [
 
 export default defineConfig({
     output,
-    args: [...weatherFull, ...nextHourFull, ...api, ...storage, ...logLevel],
+    args: [...weatherFull, ...nextHourFull, ...airQualityFull, ...api, ...storage, ...logLevel],
 });

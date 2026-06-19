@@ -4,7 +4,13 @@ export default {
             DataSets: ["airQuality", "currentWeather", "forecastDaily", "forecastHourly", "forecastNextHour", "locationInfo", "news", "historicalComparisons", "weatherAlerts", "weatherChanges"],
             Weather: { Replace: ["CN"], Provider: "WeatherKit", Fallback: { Provider: "WeatherKit" } },
             NextHour: { Provider: "WeatherKit", Fallback: { Provider: "WeatherKit" } },
-            API: { QWeather: { Token: null, Host: "devapi.qweather.com" }, OpenWeather: { Token: null, URL: "https://api.openweathermap.org/data/4.0/onecall" } },
+            AirQuality: { Replace: ["CN"], Provider: "WeatherKit", Fallback: { Provider: ["QWeather", "WAQI"] } },
+            API: {
+                WAQI: { Token: null },
+                IQAir: { Token: null, URL: "https://api.airvisual.com/v2/nearest_city" },
+                QWeather: { Token: null, Host: "devapi.qweather.com" },
+                OpenWeather: { Token: null, URL: "https://api.openweathermap.org/data/4.0/onecall" },
+            },
         },
         Configs: {
             Availability: {

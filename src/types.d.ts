@@ -80,6 +80,55 @@ export interface Settings {
         Provider?: 'WeatherKit' | 'QWeather';
 };
 };
+    AirQuality?: {
+    /**
+         * [Air Quality] Replacement Scope
+         *
+         * Replace air-quality data only for matching regions.
+         *
+         * @remarks
+         *
+         * Possible values:
+         * - `'CN'` - Mainland China
+         * - `'CN|HK|MO|TW'` - Mainland China, Hong Kong, Macau, and Taiwan
+         * - `'.*'` - All Regions
+         *
+         * @defaultValue "CN"
+         */
+        Replace?: 'CN' | 'CN|HK|MO|TW' | '.*';
+    /**
+         * [Air Quality] Data Source
+         *
+         * Use the selected provider to replace AQI. IQAir results can be supplemented by the configured fallback providers when pollutant details are missing.
+         *
+         * @remarks
+         *
+         * Possible values:
+         * - `'WeatherKit'` - WeatherKit (No replacement)
+         * - `'IQAir'` - IQAir
+         * - `'QWeather'` - QWeather
+         * - `'WAQI'` - WAQI
+         *
+         * @defaultValue "WeatherKit"
+         */
+        Provider?: 'WeatherKit' | 'IQAir' | 'QWeather' | 'WAQI';
+    Fallback?: {
+        /**
+         * [Air Quality] Fallback Sources
+         *
+         * Fallback order used when the primary AQI provider is unavailable or lacks pollutant concentration details.
+         *
+         * @remarks
+         *
+         * Possible values:
+         * - `'QWeather'` - QWeather
+         * - `'WAQI'` - WAQI
+         *
+         * @defaultValue ["QWeather","WAQI"]
+         */
+        Provider?: ('QWeather' | 'WAQI')[];
+};
+};
     API?: {
     OpenWeather?: {
             /**
@@ -112,6 +161,34 @@ export interface Settings {
          * [API] QWeather Token
          *
          * QWeather API token
+         *
+         * @defaultValue ""
+         */
+        Token?: string;
+};
+    IQAir?: {
+        /**
+         * [API] IQAir Request URL
+         *
+         * IQAir AirVisual API request URL
+         *
+         * @defaultValue "https://api.airvisual.com/v2/nearest_city"
+         */
+        URL?: string;
+        /**
+         * [API] IQAir Token
+         *
+         * IQAir AirVisual API token
+         *
+         * @defaultValue ""
+         */
+        Token?: string;
+};
+    WAQI?: {
+        /**
+         * [API] WAQI Token
+         *
+         * WAQI API token. Leave empty to let the script try the public nearest-station flow.
          *
          * @defaultValue ""
          */

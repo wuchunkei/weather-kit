@@ -1,9 +1,9 @@
 {
     "name": "@nsringo/weatherkit",
-    "version": "3.1.6",
+    "version": "3.1.7",
     "organizationName": " iRingo",
     "displayName": " iRingo: 🌤 WeatherKit",
-    "description": "iOS 18 & macOS 15 & watchOS 11\n1. Unlock all Weather features\n2. Add next-hour precipitation data\n3. Add weather data replacement\n4. Fall back from OpenWeather to WeatherKit or QWeather when OpenWeather is unavailable\n\nOpen-source derivative notice: This project is a secondary creation and functional extension based on NSRingo/WeatherKit and related open-source work. It is intended for learning, research, and personal use only. WeatherKit, Apple, OpenWeather, QWeather, Hong Kong Observatory, and related data, trademarks, and services belong to their respective rights holders. Users should comply with applicable service terms and local laws.",
+    "description": "iOS 18 & macOS 15 & watchOS 11\n1. Unlock all Weather features\n2. Add AQI replacement with IQAir, QWeather, and WAQI fallback support\n3. Add next-hour precipitation data\n4. Add weather data replacement\n5. Fall back from OpenWeather to WeatherKit or QWeather when OpenWeather is unavailable\n\nOpen-source derivative notice: This project is a secondary creation and functional extension based on NSRingo/WeatherKit and related open-source work. It is intended for learning, research, and personal use only. WeatherKit, Apple, OpenWeather, QWeather, IQAir, WAQI, Hong Kong Observatory, and related data, trademarks, and services belong to their respective rights holders. Users should comply with applicable service terms and local laws.",
     "homepage": "https://github.com/wuchunkei/weather-kit",
     "openUrl": "http://boxjs.com/#/app/iRingo.WeatherKit",
     "icon": "https://developer.apple.com/assets/elements/icons/weatherkit/weatherkit-128x128.png",
