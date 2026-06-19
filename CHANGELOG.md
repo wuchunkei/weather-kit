@@ -15,6 +15,7 @@
   * Added `airQualityScale` request script rules to generated Loon, Quantumult X, Surge, and Stash modules.
   * Reduced WeatherKit response-script pressure by processing replacement datasets sequentially and lazily creating third-party provider clients only when needed.
   * Reduced AQI loading time by avoiding extra pollutant fallback requests when Provider Default AQI is selected, and by using the one-request WAQI nearest-station flow when no WAQI token is configured.
+  * Added a temporary response logger for WeatherKit severe weather notification channel JSON to diagnose next-hour precipitation notification support.
 
 ## 3.1.6
 

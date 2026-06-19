@@ -22,6 +22,8 @@ host, tether.edge.apple, reject
 ^https?:\/\/weatherkit\.apple\.com\/api\/v[23]\/weather\/ url script-request-header https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/request.bundle.js
 # 🌤 WeatherKit.api.availability.response
 ^https?:\/\/weatherkit\.apple\.com\/api\/v[123]\/availability\/ url script-response-body https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/response.bundle.js
+# WeatherKit.api.severeWeatherNotificationChannels.response
+^https?:\/\/weatherkit\.apple\.com\/api\/v1\/severeWeatherNotificationChannels\/global$ url script-response-body https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/response.bundle.js
 # 🌤 WeatherKit.api.weather.response
 ^https?:\/\/weatherkit\.apple\.com\/api\/v[23]\/weather\/ url script-response-body https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/response.bundle.js
 

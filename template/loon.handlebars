@@ -24,6 +24,7 @@ http-request ^https?:\/\/weatherkit\.apple\.com\/api\/v1\/airQualityScale\/ scri
 http-request ^https?:\/\/weatherkit\.apple\.com\/api\/v[123]\/availability\/ script-path=https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/request.bundle.js, tag=🌤 WeatherKit.api.availability.request, argument={{{scriptParams}}}
 http-request ^https?:\/\/weatherkit\.apple\.com\/api\/v[23]\/weather\/ script-path=https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/request.bundle.js, tag=🌤 WeatherKit.api.weather.request, argument={{{scriptParams}}}
 http-response ^https?:\/\/weatherkit\.apple\.com\/api\/v[123]\/availability\/ requires-body=1, script-path=https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/response.bundle.js, tag=🌤 WeatherKit.api.availability.response, argument={{{scriptParams}}}
+http-response ^https?:\/\/weatherkit\.apple\.com\/api\/v1\/severeWeatherNotificationChannels\/global$ requires-body=1, script-path=https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/response.bundle.js, tag=WeatherKit.api.severeWeatherNotificationChannels.response, argument={{{scriptParams}}}
 http-response ^https?:\/\/weatherkit\.apple\.com\/api\/v[23]\/weather\/ requires-body=1, binary-body-mode=1, script-path=https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/response.bundle.js, tag=🌤 WeatherKit.api.weather.response, argument={{{scriptParams}}}
 
 [MITM]

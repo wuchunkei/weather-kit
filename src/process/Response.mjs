@@ -69,6 +69,16 @@ function asUint8Array(bytes) {
     return new Uint8Array();
 }
 
+function logNotificationChannelsResponse(body, headers) {
+    const text = JSON.stringify(body, null, 2);
+    const chunkSize = 12000;
+    Console.log(`severeWeatherNotificationChannels headers: ${JSON.stringify(headers ?? {})}`);
+    Console.log(`severeWeatherNotificationChannels body length: ${text.length}`);
+    for (let index = 0; index < text.length; index += chunkSize) {
+        Console.log(`severeWeatherNotificationChannels body[${index}-${Math.min(index + chunkSize, text.length)}]: ${text.slice(index, index + chunkSize)}`);
+    }
+}
+
 function cleanAppleFetchHeaders(headers, country, storefront) {
     const cleanedHeaders = { ...(headers ?? {}) };
     Object.keys(cleanedHeaders).forEach(key => {
@@ -205,7 +215,9 @@ export async function Response($request, $response) {
             switch (url.hostname) {
                 case "weatherkit.apple.com":
                     // Route by path.
-                    if (/^\/api\/v[123]\/availability\//.test(url.pathname)) {
+                    if (/^\/api\/v1\/severeWeatherNotificationChannels\/global$/i.test(url.pathname)) {
+                        logNotificationChannelsResponse(body, $response.headers);
+                    } else if (/^\/api\/v[123]\/availability\//.test(url.pathname)) {
                         const version = url.pathname.match(/^\/api\/(?<version>v[123])\/availability\//)?.groups?.version;
                         body = Configs?.Availability?.[version] ?? Configs?.Availability?.v2;
                     }
