@@ -4,7 +4,7 @@ export default {
             DataSets: ["airQuality", "currentWeather", "forecastDaily", "forecastHourly", "forecastNextHour", "locationInfo", "news", "historicalComparisons", "weatherAlerts", "weatherChanges"],
             Weather: { Replace: ["OFF"], Provider: "WeatherKit", Fallback: { Provider: "WeatherKit" } },
             NextHour: { Provider: "WeatherKit", Fallback: { Provider: "WeatherKit" } },
-            AirQuality: { Replace: ["CN"], Provider: "WeatherKit", Standard: "Provider", Fallback: { Provider: ["QWeather", "WAQI"] } },
+            AirQuality: { Replace: ["CN"], Provider: "WeatherKit", Standard: "Provider", RequestTimeout: 1500, Fallback: { Provider: ["QWeather", "WAQI"] } },
             API: {
                 WAQI: { Token: null },
                 IQAir: { Token: null, URL: "https://api.airvisual.com/v2/nearest_city" },

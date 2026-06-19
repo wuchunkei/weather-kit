@@ -128,11 +128,19 @@ export interface Settings {
          * @defaultValue "Provider"
          */
         Standard?: 'Provider' | 'US' | 'CN';
+    /**
+         * [Air Quality] Request Timeout
+         *
+         * Maximum wait time in milliseconds for each third-party AQI provider before falling back or keeping the original WeatherKit response.
+         *
+         * @defaultValue 1500
+         */
+        RequestTimeout?: number;
     Fallback?: {
         /**
          * [Air Quality] Fallback Sources
          *
-         * Fallback order used when the primary AQI provider is unavailable or lacks pollutant concentration details.
+         * Fallback order used when the primary AQI provider is unavailable. Pollutant details are fetched from fallback providers only when a forced AQI standard needs them.
          *
          * @remarks
          *

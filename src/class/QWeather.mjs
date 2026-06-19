@@ -1,20 +1,21 @@
-import { Console, fetch, Lodash as _, time } from "@nsnanocat/util";
-import Weather from "./Weather.mjs";
+import { Console, fetch, time } from "@nsnanocat/util";
 import AirQuality from "../class/AirQuality.mjs";
 import ForecastNextHour from "./ForecastNextHour.mjs";
+import Weather from "./Weather.mjs";
 
 export default class QWeather {
-    constructor(parameters, token, host = "devapi.qweather.com") {
+    constructor(parameters, token, host, airQualityTimeout) {
         this.Name = "QWeather";
         this.Version = "5.1.0";
         Console.log(`🟧 ${this.Name} v${this.Version}`);
-        this.endpoint = `https://${host}`;
+        this.endpoint = `https://${host || "devapi.qweather.com"}`;
         this.headers = { "X-QW-Api-Key": token };
         this.version = parameters.version;
         this.language = parameters.language;
         this.latitude = parameters.latitude;
         this.longitude = parameters.longitude;
         this.country = parameters.country;
+        this.airQualityTimeout = airQualityTimeout;
     }
 
     #cache = {
@@ -290,6 +291,7 @@ export default class QWeather {
         const request = {
             url: `${this.endpoint}/airquality/v1/current/${this.latitude}/${this.longitude}`,
             headers: this.headers,
+            timeout: this.airQualityTimeout,
         };
         try {
             const body = await fetch(request).then(response => JSON.parse(response?.body ?? "{}"));
@@ -347,7 +349,7 @@ export default class QWeather {
                         forecastEnd: 0,
                         forecastStart: minuteStemp,
                         minutes: body?.minutely
-                            ?.map((minutely, index) => {
+                            ?.map(minutely => {
                                 const minute = {
                                     perceivedPrecipitationIntensity: 0,
                                     precipitationChance: 0,

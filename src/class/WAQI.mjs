@@ -2,7 +2,7 @@ import { Console, fetch } from "@nsnanocat/util";
 import AirQuality from "../class/AirQuality.mjs";
 
 export default class WAQI {
-    constructor(parameters, token) {
+    constructor(parameters, token, requestTimeout) {
         this.Name = "WAQI";
         this.Version = "1.4.3";
         Console.log(`🟧 ${this.Name} v${this.Version}`);
@@ -13,6 +13,7 @@ export default class WAQI {
         this.latitude = parameters.latitude;
         this.longitude = parameters.longitude;
         this.country = parameters.country;
+        this.requestTimeout = requestTimeout;
     }
 
     #Configs = {
@@ -49,6 +50,7 @@ export default class WAQI {
             url: `https://api.waqi.info/${mapqVersion}/nearest?n=1&geo=1/${this.latitude}/${this.longitude}`,
             //"url": `https://mapq.waqi.info/${mapqVersion}/nearest/station/${stationId}?n=1`,
             headers: this.headers,
+            timeout: this.requestTimeout,
         };
         let airQuality;
         try {
@@ -138,6 +140,7 @@ export default class WAQI {
         const request = {
             url: `https://api.waqi.info/api/token/${stationId}`,
             headers: this.headers,
+            timeout: this.requestTimeout,
         };
         let token;
         try {
@@ -178,6 +181,7 @@ export default class WAQI {
             url: `https://api.waqi.info/api/feed/@${stationId}/aqi.json`,
             headers: this.headers,
             body: `token=${token}&id=${stationId}`,
+            timeout: this.requestTimeout,
         };
         let airQuality;
         try {
@@ -241,6 +245,7 @@ export default class WAQI {
         const request = {
             url: `https://api2.waqi.info/feed/geo:${this.latitude};${this.longitude}/?token=${token}`,
             headers: this.headers,
+            timeout: this.requestTimeout,
         };
         if (stationId) request.url = `https://api2.waqi.info/feed/@${stationId}/?token=${token}`;
         let airQuality;

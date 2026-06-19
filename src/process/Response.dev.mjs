@@ -1,18 +1,18 @@
 import { Console, fetch } from "@nsnanocat/util";
-import database from "../function/database.mjs";
-import setENV from "../function/setENV.mjs";
 import * as flatbuffers from "flatbuffers";
-import WeatherKit2 from "../class/WeatherKit2.mjs";
-import parseWeatherKitURL from "../function/parseWeatherKitURL.mjs";
+import AirQuality from "../class/AirQuality.mjs";
+import HKO from "../class/HKO.mjs";
+import IQAir from "../class/IQAir.mjs";
+import MatchEnum from "../class/MatchEnum.mjs";
 import OpenWeather from "../class/OpenWeather.mjs";
 import QWeather from "../class/QWeather.mjs";
 import WAQI from "../class/WAQI.mjs";
-import IQAir from "../class/IQAir.mjs";
 import Weather from "../class/Weather.mjs";
-import AirQuality from "../class/AirQuality.mjs";
-import MatchEnum from "../class/MatchEnum.mjs";
+import WeatherKit2 from "../class/WeatherKit2.mjs";
+import database from "../function/database.mjs";
+import parseWeatherKitURL from "../function/parseWeatherKitURL.mjs";
 import patchFlatBufferRootTableField from "../function/patchFlatBufferRootTableField.mjs";
-import HKO from "../class/HKO.mjs";
+import setENV from "../function/setENV.mjs";
 
 const ORIGINAL_COUNTRY_HEADER = "X-iRingo-Original-Country";
 const ORIGINAL_STOREFRONT_HEADER = "X-iRingo-Original-Store-Front";
@@ -93,7 +93,7 @@ function cleanAppleFetchHeaders(headers, country, storefront) {
 }
 
 async function FetchAppleWeatherAlerts($request, url, country, storefront) {
-    Console.info("?? FetchAppleWeatherAlerts", `country: ${country}`);
+    Console.info("☑️ FetchAppleWeatherAlerts", `country: ${country}`);
     try {
         const alertURL = new URL(url.toString());
         alertURL.searchParams.set("country", country);
@@ -116,7 +116,7 @@ async function FetchAppleWeatherAlerts($request, url, country, storefront) {
         Console.warn("FetchAppleWeatherAlerts", error);
         return undefined;
     } finally {
-        Console.info("? FetchAppleWeatherAlerts");
+        Console.info("✅ FetchAppleWeatherAlerts");
     }
 }
 
@@ -373,10 +373,10 @@ export async function Response($request, $response) {
  * @returns {Promise<any>} Current weather object after injection.
  */
 async function InjectCurrentWeather(currentWeather, Settings, enviroments) {
-    Console.info("?? InjectCurrentWeather");
+    Console.info("☑️ InjectCurrentWeather");
     if (!isWeatherReplaceEnabled(Settings, enviroments.country)) {
         Console.warn("InjectCurrentWeather", `Unreplaced country: ${enviroments.country}`);
-        Console.info("? InjectCurrentWeather");
+        Console.info("✅ InjectCurrentWeather");
         return currentWeather;
     }
     let newCurrentWeather;
@@ -399,7 +399,7 @@ async function InjectCurrentWeather(currentWeather, Settings, enviroments) {
         currentWeather = { ...currentWeather, ...newCurrentWeather };
         //Console.debug(`currentWeather: ${JSON.stringify(currentWeather, null, 2)}`);
     }
-    Console.info("? InjectCurrentWeather");
+    Console.info("✅ InjectCurrentWeather");
     return currentWeather;
 }
 
@@ -411,10 +411,10 @@ async function InjectCurrentWeather(currentWeather, Settings, enviroments) {
  * @returns {Promise<any>} Daily forecast object after injection.
  */
 async function InjectForecastDaily(forecastDaily, Settings, enviroments) {
-    Console.info("?? InjectForecastDaily");
+    Console.info("☑️ InjectForecastDaily");
     if (!isWeatherReplaceEnabled(Settings, enviroments.country)) {
         Console.warn("InjectForecastDaily", `Unreplaced country: ${enviroments.country}`);
-        Console.info("? InjectForecastDaily");
+        Console.info("✅ InjectForecastDaily");
         return forecastDaily;
     }
     let newForecastDaily;
@@ -437,7 +437,7 @@ async function InjectForecastDaily(forecastDaily, Settings, enviroments) {
         Weather.mergeForecast(forecastDaily?.days, newForecastDaily?.days);
         //Console.debug(`forecastDaily: ${JSON.stringify(forecastDaily, null, 2)}`);
     }
-    Console.info("? InjectForecastDaily");
+    Console.info("✅ InjectForecastDaily");
     return forecastDaily;
 }
 
@@ -449,10 +449,10 @@ async function InjectForecastDaily(forecastDaily, Settings, enviroments) {
  * @returns {Promise<any>} Hourly forecast object after injection.
  */
 async function InjectForecastHourly(forecastHourly, Settings, enviroments) {
-    Console.info("?? InjectForecastHourly");
+    Console.info("☑️ InjectForecastHourly");
     if (!isWeatherReplaceEnabled(Settings, enviroments.country)) {
         Console.warn("InjectForecastHourly", `Unreplaced country: ${enviroments.country}`);
-        Console.info("? InjectForecastHourly");
+        Console.info("✅ InjectForecastHourly");
         return forecastHourly;
     }
     let newForecastHourly;
@@ -475,7 +475,7 @@ async function InjectForecastHourly(forecastHourly, Settings, enviroments) {
         forecastHourly.hours = Weather.mergeForecast(forecastHourly?.hours, newForecastHourly?.hours);
         //Console.debug(`forecastHourly: ${JSON.stringify(forecastHourly, null, 2)}`);
     }
-    Console.info("? InjectForecastHourly");
+    Console.info("✅ InjectForecastHourly");
     return forecastHourly;
 }
 
@@ -487,10 +487,10 @@ async function InjectForecastHourly(forecastHourly, Settings, enviroments) {
  * @returns {Promise<any>} Next-hour forecast object after injection.
  */
 async function InjectForecastNextHour(forecastNextHour, Settings, enviroments) {
-    Console.info("?? InjectForecastNextHour");
+    Console.info("☑️ InjectForecastNextHour");
 
     if (forecastNextHour && Settings?.NextHour?.Provider === "WeatherKit") {
-        Console.info("? InjectForecastNextHour");
+        Console.info("✅ InjectForecastNextHour");
         return forecastNextHour;
     }
 
@@ -516,7 +516,7 @@ async function InjectForecastNextHour(forecastNextHour, Settings, enviroments) {
         forecastNextHour = { ...forecastNextHour, ...newForecastNextHour };
         Console.debug(`forecastNextHour: ${JSON.stringify(forecastNextHour, null, 2)}`);
     }
-    Console.info("? InjectForecastNextHour");
+    Console.info("✅ InjectForecastNextHour");
     return forecastNextHour;
 }
 
@@ -528,23 +528,23 @@ async function InjectForecastNextHour(forecastNextHour, Settings, enviroments) {
  * @returns {Promise<any>} Air-quality object after replacement.
  */
 async function InjectAirQuality(airQuality, Settings, enviroments) {
-    Console.info("?? InjectAirQuality");
+    Console.info("☑️ InjectAirQuality");
     if (!isAirQualityReplaceEnabled(Settings, enviroments.country)) {
         Console.warn("InjectAirQuality", `Unreplaced country: ${enviroments.country}`);
-        Console.info("? InjectAirQuality");
+        Console.info("✅ InjectAirQuality");
         return airQuality;
     }
 
     const provider = getAirQualityProvider(Settings);
     if (provider === "WeatherKit") {
-        Console.info("? InjectAirQuality");
+        Console.info("✅ InjectAirQuality");
         return ApplyAirQualityStandard(AirQuality.FixPollutantsUnits(airQuality), Settings);
     }
 
-    const injectedAirQuality = ApplyAirQualityStandard(await FetchAirQualityWithFallback(provider, getAirQualityFallbackProviders(Settings, provider), enviroments), Settings);
+    const injectedAirQuality = ApplyAirQualityStandard(await FetchAirQualityWithFallback(provider, getAirQualityFallbackProviders(Settings, provider), enviroments, Settings), Settings);
     if (!hasAvailableProviderData(injectedAirQuality)) {
         Console.warn("InjectAirQuality", "All configured air-quality providers are unavailable");
-        Console.info("? InjectAirQuality");
+        Console.info("✅ InjectAirQuality");
         return airQuality;
     }
 
@@ -562,7 +562,7 @@ async function InjectAirQuality(airQuality, Settings, enviroments) {
     };
 
     Console.debug(`airQuality: ${JSON.stringify(patchedAirQuality, null, 2)}`);
-    Console.info("? InjectAirQuality");
+    Console.info("✅ InjectAirQuality");
     return patchedAirQuality;
 }
 
@@ -613,6 +613,12 @@ function getAirQualityStandard(Settings) {
     return ["Provider", "US", "CN"].includes(standard) ? standard : "Provider";
 }
 
+function getAirQualityRequestTimeout(Settings) {
+    const timeout = Number.parseInt(Settings?.AirQuality?.RequestTimeout ?? 1500, 10);
+    if (!Number.isFinite(timeout) || timeout <= 0) return 1500;
+    return Math.min(Math.max(timeout, 500), 5000);
+}
+
 function ApplyAirQualityStandard(airQuality, Settings) {
     const standard = getAirQualityStandard(Settings);
     if (standard === "Provider") return airQuality;
@@ -657,6 +663,7 @@ function getAirQualityFallbackProviders(Settings, provider) {
 
 function createProviderEnviroments(parameters, Settings) {
     const enviroments = { country: parameters.country };
+    const airQualityRequestTimeout = getAirQualityRequestTimeout(Settings);
     Object.defineProperties(enviroments, {
         openWeather: {
             get() {
@@ -666,19 +673,19 @@ function createProviderEnviroments(parameters, Settings) {
         },
         qWeather: {
             get() {
-                if (!this._qWeather) this._qWeather = new QWeather(parameters, Settings?.API?.QWeather?.Token, Settings?.API?.QWeather?.Host);
+                if (!this._qWeather) this._qWeather = new QWeather(parameters, Settings?.API?.QWeather?.Token, Settings?.API?.QWeather?.Host, airQualityRequestTimeout);
                 return this._qWeather;
             },
         },
         waqi: {
             get() {
-                if (!this._waqi) this._waqi = new WAQI(parameters, Settings?.API?.WAQI?.Token);
+                if (!this._waqi) this._waqi = new WAQI(parameters, Settings?.API?.WAQI?.Token, airQualityRequestTimeout);
                 return this._waqi;
             },
         },
         iqAir: {
             get() {
-                if (!this._iqAir) this._iqAir = new IQAir(parameters, Settings?.API?.IQAir?.Token, Settings?.API?.IQAir?.URL);
+                if (!this._iqAir) this._iqAir = new IQAir(parameters, Settings?.API?.IQAir?.Token, Settings?.API?.IQAir?.URL, airQualityRequestTimeout);
                 return this._iqAir;
             },
         },
@@ -698,27 +705,47 @@ async function FetchProviderData(method, provider, enviroments) {
     }
 }
 
-async function FetchAirQualityProvider(provider, enviroments) {
-    switch (provider) {
-        case "IQAir":
-            return await enviroments.iqAir.CurrentAirQuality();
-        case "QWeather":
-            return await enviroments.qWeather.CurrentAirQuality();
-        case "WAQI":
-            return await FetchWAQIAirQuality(enviroments);
-        case "WeatherKit":
-        default:
-            return undefined;
+async function FetchAirQualityProvider(provider, enviroments, Settings) {
+    const timeout = getAirQualityRequestTimeout(Settings);
+    let timer;
+    try {
+        return await Promise.race([
+            (async () => {
+                switch (provider) {
+                    case "IQAir":
+                        return await enviroments.iqAir.CurrentAirQuality();
+                    case "QWeather":
+                        return await enviroments.qWeather.CurrentAirQuality();
+                    case "WAQI":
+                        return await FetchWAQIAirQuality(enviroments);
+                    case "WeatherKit":
+                    default:
+                        return undefined;
+                }
+            })().catch(error => {
+                Console.warn("FetchAirQualityProvider", `${provider} failed: ${error}`);
+                return undefined;
+            }),
+            new Promise(resolve => {
+                timer = setTimeout(() => {
+                    Console.warn("FetchAirQualityProvider", `${provider} timed out after ${timeout}ms`);
+                    resolve(undefined);
+                }, timeout);
+            }),
+        ]);
+    } finally {
+        if (timer) clearTimeout(timer);
     }
 }
 
-async function FetchAirQualityWithFallback(provider, fallbackProviders, enviroments) {
-    Console.info("?? FetchAirQualityWithFallback", `provider: ${provider}`, `fallback: ${fallbackProviders.join(",")}`);
+async function FetchAirQualityWithFallback(provider, fallbackProviders, enviroments, Settings) {
+    Console.info("☑️ FetchAirQualityWithFallback", `provider: ${provider}`, `fallback: ${fallbackProviders.join(",")}`, `timeout: ${getAirQualityRequestTimeout(Settings)}ms`);
     const providers = [provider, ...fallbackProviders];
+    const needsPollutants = getAirQualityStandard(Settings) !== "Provider";
     const attempts = [];
 
     for (const currentProvider of providers) {
-        const airQuality = await FetchAirQualityProvider(currentProvider, enviroments);
+        const airQuality = await FetchAirQualityProvider(currentProvider, enviroments, Settings);
         attempts.push({ provider: currentProvider, airQuality });
         if (hasAvailableProviderData(airQuality) && Number.isFinite(Number(airQuality.index))) break;
         Console.warn("FetchAirQualityWithFallback", `${currentProvider} unavailable, trying next provider`);
@@ -726,16 +753,16 @@ async function FetchAirQualityWithFallback(provider, fallbackProviders, envirome
 
     const indexAttempt = attempts.find(({ airQuality }) => hasAvailableProviderData(airQuality) && Number.isFinite(Number(airQuality.index)));
     if (!indexAttempt) {
-        Console.info("? FetchAirQualityWithFallback");
+        Console.info("✅ FetchAirQualityWithFallback");
         return attempts.find(({ airQuality }) => airQuality?.metadata)?.airQuality;
     }
 
     let result = indexAttempt.airQuality;
     let pollutantAttempt = hasPollutants(result) ? indexAttempt : attempts.find(({ airQuality }) => hasAvailableProviderData(airQuality) && hasPollutants(airQuality));
 
-    if (!pollutantAttempt && !hasPollutants(result)) {
+    if (needsPollutants && !pollutantAttempt && !hasPollutants(result)) {
         for (const currentProvider of providers.filter(provider => !attempts.some(attempt => attempt.provider === provider))) {
-            const airQuality = await FetchAirQualityProvider(currentProvider, enviroments);
+            const airQuality = await FetchAirQualityProvider(currentProvider, enviroments, Settings);
             if (hasAvailableProviderData(airQuality) && hasPollutants(airQuality)) {
                 pollutantAttempt = { provider: currentProvider, airQuality };
                 break;
@@ -754,22 +781,14 @@ async function FetchAirQualityWithFallback(provider, fallbackProviders, envirome
         };
     }
 
-    Console.info("? FetchAirQualityWithFallback", `indexProvider: ${indexAttempt.provider}`, `pollutantsProvider: ${pollutantAttempt?.provider ?? indexAttempt.provider}`);
+    Console.info("✅ FetchAirQualityWithFallback", `indexProvider: ${indexAttempt.provider}`, `pollutantsProvider: ${pollutantAttempt?.provider ?? indexAttempt.provider}`);
     return result;
 }
 
 async function FetchWAQIAirQuality(enviroments) {
     if (enviroments.waqi.token) return await enviroments.waqi.AQI2();
 
-    const nearest = await enviroments.waqi.Nearest();
-    const token = await enviroments.waqi.Token(nearest?.metadata?.stationId);
-    const aqi = await enviroments.waqi.AQI(nearest?.metadata?.stationId, token);
-
-    return {
-        metadata: { ...nearest?.metadata, ...aqi?.metadata },
-        ...nearest,
-        ...aqi,
-    };
+    return await enviroments.waqi.Nearest();
 }
 
 async function FetchOpenWeatherFallback(method, fallbackProvider, enviroments, context) {

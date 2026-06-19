@@ -2,7 +2,7 @@ import { Console, fetch } from "@nsnanocat/util";
 import AirQuality from "../class/AirQuality.mjs";
 
 export default class IQAir {
-    constructor(parameters, token, url = "https://api.airvisual.com/v2/nearest_city") {
+    constructor(parameters, token, url, requestTimeout) {
         this.Name = "IQAir";
         this.Version = "1.0.0";
         Console.log(`🟧 ${this.Name} v${this.Version}`);
@@ -14,6 +14,7 @@ export default class IQAir {
         this.latitude = parameters.latitude;
         this.longitude = parameters.longitude;
         this.country = parameters.country;
+        this.requestTimeout = requestTimeout;
     }
 
     #currentAirQuality;
@@ -136,7 +137,7 @@ export default class IQAir {
 
         let airQuality;
         try {
-            const body = await fetch({ url: url.toString(), headers: this.headers }).then(response => JSON.parse(response?.body ?? "{}"));
+            const body = await fetch({ url: url.toString(), headers: this.headers, timeout: this.requestTimeout }).then(response => JSON.parse(response?.body ?? "{}"));
             airQuality = IQAir.FromBody(body, this);
         } catch (error) {
             Console.warn("IQAir.CurrentAirQuality", error);
