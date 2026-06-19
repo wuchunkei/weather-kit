@@ -52,14 +52,15 @@ export const output = {
 const weatherReplace: Arg = {
     key: "Weather.Replace",
     name: "[Weather] Replacement Scope",
-    defaultValue: "CN",
+    defaultValue: "OFF",
     type: "string",
     options: [
+        { key: "OFF", label: "Disabled" },
         { key: "CN", label: "Mainland China" },
         { key: "CN|HK|MO|TW", label: "Mainland China, Hong Kong, Macau, and Taiwan" },
         { key: ".*", label: "All Regions" },
     ],
-    description: "Replace weather data only for matching regions.",
+    description: "Replace weather data only for matching regions. Keep Disabled when you only need AQI replacement.",
 };
 
 const weatherProvider: Arg = {

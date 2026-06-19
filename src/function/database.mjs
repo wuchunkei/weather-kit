@@ -2,7 +2,7 @@ export default {
     WeatherKit: {
         Settings: {
             DataSets: ["airQuality", "currentWeather", "forecastDaily", "forecastHourly", "forecastNextHour", "locationInfo", "news", "historicalComparisons", "weatherAlerts", "weatherChanges"],
-            Weather: { Replace: ["CN"], Provider: "WeatherKit", Fallback: { Provider: "WeatherKit" } },
+            Weather: { Replace: ["OFF"], Provider: "WeatherKit", Fallback: { Provider: "WeatherKit" } },
             NextHour: { Provider: "WeatherKit", Fallback: { Provider: "WeatherKit" } },
             AirQuality: { Replace: ["CN"], Provider: "WeatherKit", Standard: "Provider", Fallback: { Provider: ["QWeather", "WAQI"] } },
             API: {

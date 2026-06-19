@@ -7,14 +7,16 @@
   * Added fallback chaining for AQI replacement; the default fallback order is `QWeather` then `WAQI`.
   * When the primary AQI source is available but lacks pollutant concentrations, the response can supplement pollutants from the fallback chain while keeping the primary AQI index.
   * Added IQAir and WAQI API settings to generated modules and BoxJs settings.
+  * Weather data replacement is now disabled by default so AQI-only setups do not trigger full OpenWeather/QWeather weather replacement.
 
 ### Bug Fixes
   * Added a local `airQualityScale` request handler to prevent Apple Weather AQI scale requests from passing through to 404 responses in unsupported regions.
   * Added `airQualityScale` request script rules to generated Loon, Quantumult X, Surge, and Stash modules.
+  * Reduced WeatherKit response-script pressure by processing replacement datasets sequentially and lazily creating third-party provider clients only when needed.
 
 ## 3.1.6
 
-### 🛠️ Bug Fixes
+### ??? Bug Fixes
   * Overwrote 3.1.6 with a Weather/Next-Hour focused build based on 3.1.5.
   * Removed AQI, pollutant, and iRingo built-in AQI algorithm controls from generated modules; WeatherKit air quality is left untouched.
   * Added selectable OpenWeather fallback providers for Weather and Next-Hour Precipitation Intensity: WeatherKit or QWeather.
@@ -22,14 +24,14 @@
 
 ## 3.1.5
 
-### 🔄 Other Changes
+### ?? Other Changes
   * Removed explicit AI-assistant attribution comments from source files.
   * Translated plugin UI fields, generated TypeScript settings documentation, comments, provider display labels, module metadata, and developer-facing log messages to English where practical.
   * Kept compatibility-only Chinese provider and weather-condition matches by converting them to Unicode escape sequences, preserving behavior while keeping source files readable for English-speaking developers.
 
 ## 3.1.3
 
-### 🛠️ Bug Fixes
+### ??? Bug Fixes
   * Reverted the 3.1.2 forced `US` rewrite for `weather-map2.apple.com` map tile requests to avoid `401` responses for the Air Quality map overlay.
   * Added WeatherKit main request rewriting: when `forecastNextHour` is requested and the `[Next-Hour Precipitation Intensity]` provider is not `WeatherKit`, the request country is temporarily virtualized as `US` to try to trigger the Weather app's next-hour precipitation path.
   * The WeatherKit response injection stage now reads the original country so next-hour country virtualization does not affect weather or air-quality replacement decisions.
@@ -38,27 +40,27 @@
 
 ## 3.1.2
 
-### 🛠️ Bug Fixes
+### ??? Bug Fixes
   * Fixed Weather app Air Quality map handling by adding a local request rewrite for `weather-map2.apple.com` map tile requests and normalizing the map tile region header to `US`, avoiding unavailable Air Quality layers in some regions.
   * Removed `providerLogo` injection from WeatherKit responses to prevent the footer provider area from trying to display custom source icons.
   * Added per-response caching for IQAir current air-quality requests to reduce empty results caused by repeated requests in the same WeatherKit response cycle.
 
-### 🆕 New Features
+### ?? New Features
   * Added a new cloud-function-based `WeatherKit (Rewrite)` module, with rewrite configurations for `Loon`, `Surge`, `Stash`, and `Shadowrocket`.
 
-### 🛠️ Bug Fixes
+### ??? Bug Fixes
   * Fixed a null access issue in QWeather `YesterdayAirQuality` when `locationInfo` is empty, preventing failures in special location cases such as Hong Kong and Macau.
   * Fixed the rule interception scope, added `IP-ASN 6185`, and unified `QUIC` rejection expressions to reduce unexpected direct connections.
   * Fixed duplicate weather provider settings logic.
 
-### 🔣 Dependencies
+### ?? Dependencies
   * Added runtime dependencies: `hono`, `node-fetch`, and `fetch-cookie`.
   * Updated development and base dependencies: `@rspack/cli` and `@rspack/core` to `^1.7.7`, and `@nsnanocat/util` to `^2.2.3`.
 
-### ‼️ Breaking Changes
+### ?? Breaking Changes
   * none
 
-### 🔄 Other Changes
+### ?? Other Changes
   * Added a `Hono`-based cloud-function forwarding entry for the new Rewrite version, with deployment support for `Vercel` and `Cloudflare Workers`.
   * Added a workers build pipeline with `arguments-builder.workers.config.ts` and `build:args:workers` to generate proxy module artifacts for each platform.
   * Unified project structure: moved the `Hono` entry to `src/Hono.js`, split request/response handling into `src/process/Request*.mjs` and `src/process/Response*.mjs`, and normalized module suffixes and naming.

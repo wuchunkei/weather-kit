@@ -3,18 +3,19 @@ export interface Settings {
     /**
          * [Weather] Replacement Scope
          *
-         * Replace weather data only for matching regions.
+         * Replace weather data only for matching regions. Keep Disabled when you only need AQI replacement.
          *
          * @remarks
          *
          * Possible values:
+         * - `'OFF'` - Disabled
          * - `'CN'` - Mainland China
          * - `'CN|HK|MO|TW'` - Mainland China, Hong Kong, Macau, and Taiwan
          * - `'.*'` - All Regions
          *
-         * @defaultValue "CN"
+         * @defaultValue "OFF"
          */
-        Replace?: 'CN' | 'CN|HK|MO|TW' | '.*';
+        Replace?: 'OFF' | 'CN' | 'CN|HK|MO|TW' | '.*';
     /**
          * [Weather] Data Source
          *

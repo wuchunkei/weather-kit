@@ -93,7 +93,7 @@ function cleanAppleFetchHeaders(headers, country, storefront) {
 }
 
 async function FetchAppleWeatherAlerts($request, url, country, storefront) {
-    Console.info("☑️ FetchAppleWeatherAlerts", `country: ${country}`);
+    Console.info("?? FetchAppleWeatherAlerts", `country: ${country}`);
     try {
         const alertURL = new URL(url.toString());
         alertURL.searchParams.set("country", country);
@@ -116,7 +116,7 @@ async function FetchAppleWeatherAlerts($request, url, country, storefront) {
         Console.warn("FetchAppleWeatherAlerts", error);
         return undefined;
     } finally {
-        Console.info("✅ FetchAppleWeatherAlerts");
+        Console.info("? FetchAppleWeatherAlerts");
     }
 }
 
@@ -252,88 +252,85 @@ export async function Response($request, $response) {
                                 const parameters = parseWeatherKitURL(url);
                                 parameters.country = getHeader($request.headers, ORIGINAL_COUNTRY_HEADER) ?? parameters.country;
                                 const changedDataSets = new Set();
-                                const enviroments = {
-                                    openWeather: new OpenWeather(parameters, Settings?.API?.OpenWeather?.Token, Settings?.API?.OpenWeather?.URL),
-                                    qWeather: new QWeather(parameters, Settings?.API?.QWeather?.Token, Settings?.API?.QWeather?.Host),
-                                    waqi: new WAQI(parameters, Settings?.API?.WAQI?.Token),
-                                    iqAir: new IQAir(parameters, Settings?.API?.IQAir?.Token, Settings?.API?.IQAir?.URL),
-                                    country: parameters.country,
-                                };
+                                const enviroments = createProviderEnviroments(parameters, Settings);
 
-                                await Promise.all(
-                                    parameters.dataSets.map(async dataSet => {
-                                        switch (dataSet) {
-                                            case "airQuality": {
-                                                if (Settings?.LogLevel === "DEBUG" || Settings?.LogLevel === "ALL") {
-                                                    matchEnum.airQuality();
-                                                }
-                                                body.airQuality = await InjectAirQuality(body.airQuality, Settings, enviroments);
-                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
-                                                break;
+                                for (const dataSet of parameters.dataSets) {
+                                    switch (dataSet) {
+                                        case "airQuality": {
+                                            if (Settings?.LogLevel === "DEBUG" || Settings?.LogLevel === "ALL") {
+                                                matchEnum.airQuality();
                                             }
-                                            case "currentWeather": {
-                                                if (Settings?.LogLevel === "DEBUG" || Settings?.LogLevel === "ALL") {
-                                                    matchEnum.weatherCondition();
-                                                    matchEnum.pressureTrend();
-                                                }
-                                                body.currentWeather = await InjectCurrentWeather(body.currentWeather, Settings, enviroments);
-                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
-                                                break;
-                                            }
-                                            case "forecastDaily": {
-                                                body.forecastDaily = await InjectForecastDaily(body.forecastDaily, Settings, enviroments);
-                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
-                                                break;
-                                            }
-                                            case "forecastHourly": {
-                                                body.forecastHourly = await InjectForecastHourly(body.forecastHourly, Settings, enviroments);
-                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
-                                                break;
-                                            }
-                                            case "forecastNextHour": {
-                                                Console.debug(`body.forecastNextHour: ${JSON.stringify(body?.forecastNextHour, null, 2)}`);
-                                                if (Settings?.LogLevel === "DEBUG" || Settings?.LogLevel === "ALL") {
-                                                    matchEnum.conditionType();
-                                                    matchEnum.forecastToken();
-                                                }
-                                                body.forecastNextHour = await InjectForecastNextHour(body.forecastNextHour, Settings, enviroments);
-                                                if (shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) changedDataSets.add(dataSet);
-                                                break;
-                                            }
-                                            case "news": {
-                                                if (Settings?.LogLevel === "DEBUG" || Settings?.LogLevel === "ALL") {
-                                                    matchEnum.placementType();
-                                                }
-                                                Console.debug(`body.news: ${JSON.stringify(body?.news, null, 2)}`);
-                                                break;
-                                            }
-                                            case "weatherAlerts": {
-                                                if (Settings?.LogLevel === "DEBUG" || Settings?.LogLevel === "ALL") {
-                                                    matchEnum.severity();
-                                                    matchEnum.significanceType();
-                                                    matchEnum.urgency();
-                                                    matchEnum.certainty();
-                                                    matchEnum.importanceType();
-                                                    matchEnum.responseType();
-                                                }
-                                                Console.debug(`body.weatherAlerts: ${JSON.stringify(body?.weatherAlerts, null, 2)}`);
-                                                break;
-                                            }
-                                            case "WeatherChange": {
-                                                break;
-                                            }
-                                            case "trendComparison": {
-                                                break;
-                                            }
-                                            case "locationInfo": {
-                                                Console.debug(`body.locationInfo: ${JSON.stringify(body?.locationInfo, null, 2)}`);
-                                                break;
-                                            }
-                                            default:
-                                                break;
+                                            if (!shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) break;
+                                            body.airQuality = await InjectAirQuality(body.airQuality, Settings, enviroments);
+                                            changedDataSets.add(dataSet);
+                                            break;
                                         }
-                                    }),
-                                );
+                                        case "currentWeather": {
+                                            if (Settings?.LogLevel === "DEBUG" || Settings?.LogLevel === "ALL") {
+                                                matchEnum.weatherCondition();
+                                                matchEnum.pressureTrend();
+                                            }
+                                            if (!shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) break;
+                                            body.currentWeather = await InjectCurrentWeather(body.currentWeather, Settings, enviroments);
+                                            changedDataSets.add(dataSet);
+                                            break;
+                                        }
+                                        case "forecastDaily": {
+                                            if (!shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) break;
+                                            body.forecastDaily = await InjectForecastDaily(body.forecastDaily, Settings, enviroments);
+                                            changedDataSets.add(dataSet);
+                                            break;
+                                        }
+                                        case "forecastHourly": {
+                                            if (!shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) break;
+                                            body.forecastHourly = await InjectForecastHourly(body.forecastHourly, Settings, enviroments);
+                                            changedDataSets.add(dataSet);
+                                            break;
+                                        }
+                                        case "forecastNextHour": {
+                                            Console.debug(`body.forecastNextHour: ${JSON.stringify(body?.forecastNextHour, null, 2)}`);
+                                            if (Settings?.LogLevel === "DEBUG" || Settings?.LogLevel === "ALL") {
+                                                matchEnum.conditionType();
+                                                matchEnum.forecastToken();
+                                            }
+                                            if (!shouldPatchInjectedDataSet(dataSet, Settings, enviroments.country)) break;
+                                            body.forecastNextHour = await InjectForecastNextHour(body.forecastNextHour, Settings, enviroments);
+                                            changedDataSets.add(dataSet);
+                                            break;
+                                        }
+                                        case "news": {
+                                            if (Settings?.LogLevel === "DEBUG" || Settings?.LogLevel === "ALL") {
+                                                matchEnum.placementType();
+                                            }
+                                            Console.debug(`body.news: ${JSON.stringify(body?.news, null, 2)}`);
+                                            break;
+                                        }
+                                        case "weatherAlerts": {
+                                            if (Settings?.LogLevel === "DEBUG" || Settings?.LogLevel === "ALL") {
+                                                matchEnum.severity();
+                                                matchEnum.significanceType();
+                                                matchEnum.urgency();
+                                                matchEnum.certainty();
+                                                matchEnum.importanceType();
+                                                matchEnum.responseType();
+                                            }
+                                            Console.debug(`body.weatherAlerts: ${JSON.stringify(body?.weatherAlerts, null, 2)}`);
+                                            break;
+                                        }
+                                        case "WeatherChange": {
+                                            break;
+                                        }
+                                        case "trendComparison": {
+                                            break;
+                                        }
+                                        case "locationInfo": {
+                                            Console.debug(`body.locationInfo: ${JSON.stringify(body?.locationInfo, null, 2)}`);
+                                            break;
+                                        }
+                                        default:
+                                            break;
+                                    }
+                                }
                                 if (await FillLocalizedWeatherAlerts($request, url, body, parameters, Configs)) changedDataSets.add("weatherAlerts");
                                 try {
                                     rawBody = patchWeatherRootFields(rawBody, body, [...changedDataSets]);
@@ -376,10 +373,10 @@ export async function Response($request, $response) {
  * @returns {Promise<any>} Current weather object after injection.
  */
 async function InjectCurrentWeather(currentWeather, Settings, enviroments) {
-    Console.info("☑️ InjectCurrentWeather");
+    Console.info("?? InjectCurrentWeather");
     if (!isWeatherReplaceEnabled(Settings, enviroments.country)) {
         Console.warn("InjectCurrentWeather", `Unreplaced country: ${enviroments.country}`);
-        Console.info("✅ InjectCurrentWeather");
+        Console.info("? InjectCurrentWeather");
         return currentWeather;
     }
     let newCurrentWeather;
@@ -402,7 +399,7 @@ async function InjectCurrentWeather(currentWeather, Settings, enviroments) {
         currentWeather = { ...currentWeather, ...newCurrentWeather };
         //Console.debug(`currentWeather: ${JSON.stringify(currentWeather, null, 2)}`);
     }
-    Console.info("✅ InjectCurrentWeather");
+    Console.info("? InjectCurrentWeather");
     return currentWeather;
 }
 
@@ -414,10 +411,10 @@ async function InjectCurrentWeather(currentWeather, Settings, enviroments) {
  * @returns {Promise<any>} Daily forecast object after injection.
  */
 async function InjectForecastDaily(forecastDaily, Settings, enviroments) {
-    Console.info("☑️ InjectForecastDaily");
+    Console.info("?? InjectForecastDaily");
     if (!isWeatherReplaceEnabled(Settings, enviroments.country)) {
         Console.warn("InjectForecastDaily", `Unreplaced country: ${enviroments.country}`);
-        Console.info("✅ InjectForecastDaily");
+        Console.info("? InjectForecastDaily");
         return forecastDaily;
     }
     let newForecastDaily;
@@ -440,7 +437,7 @@ async function InjectForecastDaily(forecastDaily, Settings, enviroments) {
         Weather.mergeForecast(forecastDaily?.days, newForecastDaily?.days);
         //Console.debug(`forecastDaily: ${JSON.stringify(forecastDaily, null, 2)}`);
     }
-    Console.info("✅ InjectForecastDaily");
+    Console.info("? InjectForecastDaily");
     return forecastDaily;
 }
 
@@ -452,10 +449,10 @@ async function InjectForecastDaily(forecastDaily, Settings, enviroments) {
  * @returns {Promise<any>} Hourly forecast object after injection.
  */
 async function InjectForecastHourly(forecastHourly, Settings, enviroments) {
-    Console.info("☑️ InjectForecastHourly");
+    Console.info("?? InjectForecastHourly");
     if (!isWeatherReplaceEnabled(Settings, enviroments.country)) {
         Console.warn("InjectForecastHourly", `Unreplaced country: ${enviroments.country}`);
-        Console.info("✅ InjectForecastHourly");
+        Console.info("? InjectForecastHourly");
         return forecastHourly;
     }
     let newForecastHourly;
@@ -478,7 +475,7 @@ async function InjectForecastHourly(forecastHourly, Settings, enviroments) {
         forecastHourly.hours = Weather.mergeForecast(forecastHourly?.hours, newForecastHourly?.hours);
         //Console.debug(`forecastHourly: ${JSON.stringify(forecastHourly, null, 2)}`);
     }
-    Console.info("✅ InjectForecastHourly");
+    Console.info("? InjectForecastHourly");
     return forecastHourly;
 }
 
@@ -490,10 +487,10 @@ async function InjectForecastHourly(forecastHourly, Settings, enviroments) {
  * @returns {Promise<any>} Next-hour forecast object after injection.
  */
 async function InjectForecastNextHour(forecastNextHour, Settings, enviroments) {
-    Console.info("☑️ InjectForecastNextHour");
+    Console.info("?? InjectForecastNextHour");
 
     if (forecastNextHour && Settings?.NextHour?.Provider === "WeatherKit") {
-        Console.info("✅ InjectForecastNextHour");
+        Console.info("? InjectForecastNextHour");
         return forecastNextHour;
     }
 
@@ -519,7 +516,7 @@ async function InjectForecastNextHour(forecastNextHour, Settings, enviroments) {
         forecastNextHour = { ...forecastNextHour, ...newForecastNextHour };
         Console.debug(`forecastNextHour: ${JSON.stringify(forecastNextHour, null, 2)}`);
     }
-    Console.info("✅ InjectForecastNextHour");
+    Console.info("? InjectForecastNextHour");
     return forecastNextHour;
 }
 
@@ -531,23 +528,23 @@ async function InjectForecastNextHour(forecastNextHour, Settings, enviroments) {
  * @returns {Promise<any>} Air-quality object after replacement.
  */
 async function InjectAirQuality(airQuality, Settings, enviroments) {
-    Console.info("☑️ InjectAirQuality");
+    Console.info("?? InjectAirQuality");
     if (!isAirQualityReplaceEnabled(Settings, enviroments.country)) {
         Console.warn("InjectAirQuality", `Unreplaced country: ${enviroments.country}`);
-        Console.info("✅ InjectAirQuality");
+        Console.info("? InjectAirQuality");
         return airQuality;
     }
 
     const provider = getAirQualityProvider(Settings);
     if (provider === "WeatherKit") {
-        Console.info("✅ InjectAirQuality");
+        Console.info("? InjectAirQuality");
         return ApplyAirQualityStandard(AirQuality.FixPollutantsUnits(airQuality), Settings);
     }
 
     const injectedAirQuality = ApplyAirQualityStandard(await FetchAirQualityWithFallback(provider, getAirQualityFallbackProviders(Settings, provider), enviroments), Settings);
     if (!hasAvailableProviderData(injectedAirQuality)) {
         Console.warn("InjectAirQuality", "All configured air-quality providers are unavailable");
-        Console.info("✅ InjectAirQuality");
+        Console.info("? InjectAirQuality");
         return airQuality;
     }
 
@@ -565,13 +562,13 @@ async function InjectAirQuality(airQuality, Settings, enviroments) {
     };
 
     Console.debug(`airQuality: ${JSON.stringify(patchedAirQuality, null, 2)}`);
-    Console.info("✅ InjectAirQuality");
+    Console.info("? InjectAirQuality");
     return patchedAirQuality;
 }
 
 function isWeatherReplaceEnabled(Settings, country) {
     return (Settings?.Weather?.Replace ?? []).some(rule => {
-        if (!rule) return false;
+        if (!isEnabledReplaceRule(rule)) return false;
         if (rule === country) return true;
         try {
             return new RegExp(rule).test(country);
@@ -584,7 +581,7 @@ function isWeatherReplaceEnabled(Settings, country) {
 function isAirQualityReplaceEnabled(Settings, country) {
     const rules = Settings?.AirQuality?.Replace?.length ? Settings.AirQuality.Replace : (Settings?.Weather?.Replace ?? []);
     return rules.some(rule => {
-        if (!rule) return false;
+        if (!isEnabledReplaceRule(rule)) return false;
         if (rule === country) return true;
         try {
             return new RegExp(rule).test(country);
@@ -592,6 +589,11 @@ function isAirQualityReplaceEnabled(Settings, country) {
             return false;
         }
     });
+}
+
+function isEnabledReplaceRule(rule) {
+    const value = `${rule ?? ""}`.trim().toLowerCase();
+    return !!value && !["off", "disabled", "disable", "none", "false", "0"].includes(value);
 }
 
 function hasAvailableProviderData(data) {
@@ -653,6 +655,37 @@ function getAirQualityFallbackProviders(Settings, provider) {
     return fallbackProviders.length ? fallbackProviders : provider === "IQAir" ? ["QWeather", "WAQI"] : ["WAQI"];
 }
 
+function createProviderEnviroments(parameters, Settings) {
+    const enviroments = { country: parameters.country };
+    Object.defineProperties(enviroments, {
+        openWeather: {
+            get() {
+                if (!this._openWeather) this._openWeather = new OpenWeather(parameters, Settings?.API?.OpenWeather?.Token, Settings?.API?.OpenWeather?.URL);
+                return this._openWeather;
+            },
+        },
+        qWeather: {
+            get() {
+                if (!this._qWeather) this._qWeather = new QWeather(parameters, Settings?.API?.QWeather?.Token, Settings?.API?.QWeather?.Host);
+                return this._qWeather;
+            },
+        },
+        waqi: {
+            get() {
+                if (!this._waqi) this._waqi = new WAQI(parameters, Settings?.API?.WAQI?.Token);
+                return this._waqi;
+            },
+        },
+        iqAir: {
+            get() {
+                if (!this._iqAir) this._iqAir = new IQAir(parameters, Settings?.API?.IQAir?.Token, Settings?.API?.IQAir?.URL);
+                return this._iqAir;
+            },
+        },
+    });
+    return enviroments;
+}
+
 async function FetchProviderData(method, provider, enviroments) {
     switch (provider) {
         case "QWeather":
@@ -680,7 +713,7 @@ async function FetchAirQualityProvider(provider, enviroments) {
 }
 
 async function FetchAirQualityWithFallback(provider, fallbackProviders, enviroments) {
-    Console.info("☑️ FetchAirQualityWithFallback", `provider: ${provider}`, `fallback: ${fallbackProviders.join(",")}`);
+    Console.info("?? FetchAirQualityWithFallback", `provider: ${provider}`, `fallback: ${fallbackProviders.join(",")}`);
     const providers = [provider, ...fallbackProviders];
     const attempts = [];
 
@@ -693,7 +726,7 @@ async function FetchAirQualityWithFallback(provider, fallbackProviders, envirome
 
     const indexAttempt = attempts.find(({ airQuality }) => hasAvailableProviderData(airQuality) && Number.isFinite(Number(airQuality.index)));
     if (!indexAttempt) {
-        Console.info("✅ FetchAirQualityWithFallback");
+        Console.info("? FetchAirQualityWithFallback");
         return attempts.find(({ airQuality }) => airQuality?.metadata)?.airQuality;
     }
 
@@ -721,7 +754,7 @@ async function FetchAirQualityWithFallback(provider, fallbackProviders, envirome
         };
     }
 
-    Console.info("✅ FetchAirQualityWithFallback", `indexProvider: ${indexAttempt.provider}`, `pollutantsProvider: ${pollutantAttempt?.provider ?? indexAttempt.provider}`);
+    Console.info("? FetchAirQualityWithFallback", `indexProvider: ${indexAttempt.provider}`, `pollutantsProvider: ${pollutantAttempt?.provider ?? indexAttempt.provider}`);
     return result;
 }
 
