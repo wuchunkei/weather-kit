@@ -146,7 +146,7 @@ async function FillLocalizedWeatherAlerts($request, url, body, parameters, Confi
 function shouldPatchInjectedDataSet(dataSet, Settings, country) {
     switch (dataSet) {
         case "airQuality":
-            return getAirQualityProvider(Settings) !== "WeatherKit" && isAirQualityReplaceEnabled(Settings, country);
+            return (getAirQualityProvider(Settings) !== "WeatherKit" || getAirQualityStandard(Settings) !== "Provider") && isAirQualityReplaceEnabled(Settings, country);
         case "currentWeather":
         case "forecastDaily":
         case "forecastHourly":
@@ -541,10 +541,10 @@ async function InjectAirQuality(airQuality, Settings, enviroments) {
     const provider = getAirQualityProvider(Settings);
     if (provider === "WeatherKit") {
         Console.info("✅ InjectAirQuality");
-        return AirQuality.FixPollutantsUnits(airQuality);
+        return ApplyAirQualityStandard(AirQuality.FixPollutantsUnits(airQuality), Settings);
     }
 
-    const injectedAirQuality = await FetchAirQualityWithFallback(provider, getAirQualityFallbackProviders(Settings, provider), enviroments);
+    const injectedAirQuality = ApplyAirQualityStandard(await FetchAirQualityWithFallback(provider, getAirQualityFallbackProviders(Settings, provider), enviroments), Settings);
     if (!hasAvailableProviderData(injectedAirQuality)) {
         Console.warn("InjectAirQuality", "All configured air-quality providers are unavailable");
         Console.info("✅ InjectAirQuality");
@@ -604,6 +604,47 @@ function hasPollutants(data) {
 
 function getAirQualityProvider(Settings) {
     return Settings?.AirQuality?.Provider ?? Settings?.AirQuality?.Current?.Index?.Provider ?? "WeatherKit";
+}
+
+function getAirQualityStandard(Settings) {
+    const standard = Settings?.AirQuality?.Standard ?? Settings?.AirQuality?.Scale?.Mode ?? "Provider";
+    return ["Provider", "US", "CN"].includes(standard) ? standard : "Provider";
+}
+
+function ApplyAirQualityStandard(airQuality, Settings) {
+    const standard = getAirQualityStandard(Settings);
+    if (standard === "Provider") return airQuality;
+
+    const algorithm = standard === "CN" ? "WAQI_InstantCast_CN" : "WAQI_InstantCast_US";
+    const label = standard === "CN" ? "China AQI (HJ 633-2012)" : "US AQI (EPA NowCast)";
+    const fixedAirQuality = AirQuality.FixPollutantsUnits(airQuality);
+
+    if (!hasPollutants(fixedAirQuality)) {
+        Console.warn("ApplyAirQualityStandard", `No pollutants available, keep provider AQI for ${label}`);
+        return fixedAirQuality;
+    }
+
+    const calculatedAirQuality = AirQuality.Pollutants2AQI(fixedAirQuality, Settings, {
+        algorithm,
+        allowOverRange: false,
+        forcePrimaryPollutant: true,
+    });
+
+    if (!hasAvailableProviderData(calculatedAirQuality) || !Number.isFinite(Number(calculatedAirQuality.index))) {
+        Console.warn("ApplyAirQualityStandard", `Unable to recalculate AQI for ${label}`);
+        return fixedAirQuality;
+    }
+
+    return {
+        ...fixedAirQuality,
+        ...calculatedAirQuality,
+        metadata: {
+            ...fixedAirQuality.metadata,
+            providerName: [fixedAirQuality.metadata?.providerName, `AQI Standard: ${label}`].filter(Boolean).join("\n"),
+            temporarilyUnavailable: false,
+        },
+        previousDayComparison: fixedAirQuality.previousDayComparison ?? AirQuality.Config.CompareCategoryIndexes.UNKNOWN,
+    };
 }
 
 function getAirQualityFallbackProviders(Settings, provider) {

@@ -3,6 +3,7 @@
 ### New Features
   * Added AQI replacement support for WeatherKit air-quality responses.
   * Added configurable AQI provider selection with `IQAir`, `QWeather`, and `WAQI` support.
+  * Added an AQI standard selector: provider default, US AQI (EPA NowCast), or China AQI (HJ 633-2012).
   * Added fallback chaining for AQI replacement; the default fallback order is `QWeather` then `WAQI`.
   * When the primary AQI source is available but lacks pollutant concentrations, the response can supplement pollutants from the fallback chain while keeping the primary AQI index.
   * Added IQAir and WAQI API settings to generated modules and BoxJs settings.

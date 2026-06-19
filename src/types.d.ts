@@ -112,6 +112,21 @@ export interface Settings {
          * @defaultValue "WeatherKit"
          */
         Provider?: 'WeatherKit' | 'IQAir' | 'QWeather' | 'WAQI';
+    /**
+         * [Air Quality] AQI Standard
+         *
+         * Choose the AQI standard used for display. Provider Default keeps the selected provider's own AQI; US or China recalculates AQI from pollutant concentrations when available.
+         *
+         * @remarks
+         *
+         * Possible values:
+         * - `'Provider'` - Provider Default
+         * - `'US'` - US AQI (EPA NowCast)
+         * - `'CN'` - China AQI (HJ 633-2012)
+         *
+         * @defaultValue "Provider"
+         */
+        Standard?: 'Provider' | 'US' | 'CN';
     Fallback?: {
         /**
          * [Air Quality] Fallback Sources

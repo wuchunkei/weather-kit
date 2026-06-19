@@ -145,6 +145,19 @@ const airQualityProvider: Arg = {
     description: "Use the selected provider to replace AQI. IQAir results can be supplemented by the configured fallback providers when pollutant details are missing.",
 };
 
+const airQualityStandard: Arg = {
+    key: "AirQuality.Standard",
+    name: "[Air Quality] AQI Standard",
+    defaultValue: "Provider",
+    type: "string",
+    options: [
+        { key: "Provider", label: "Provider Default" },
+        { key: "US", label: "US AQI (EPA NowCast)" },
+        { key: "CN", label: "China AQI (HJ 633-2012)" },
+    ],
+    description: "Choose the AQI standard used for display. Provider Default keeps the selected provider's own AQI; US or China recalculates AQI from pollutant concentrations when available.",
+};
+
 const airQualityFallbackProvider: Arg = {
     key: "AirQuality.Fallback.Provider",
     name: "[Air Quality] Fallback Sources",
@@ -157,8 +170,8 @@ const airQualityFallbackProvider: Arg = {
     description: "Fallback order used when the primary AQI provider is unavailable or lacks pollutant concentration details.",
 };
 
-export const airQuality = [airQualityReplace, airQualityProvider, airQualityFallbackProvider];
-const airQualityFull = [airQualityReplace, airQualityProvider, airQualityFallbackProvider];
+export const airQuality = [airQualityReplace, airQualityProvider, airQualityStandard, airQualityFallbackProvider];
+const airQualityFull = [airQualityReplace, airQualityProvider, airQualityStandard, airQualityFallbackProvider];
 
 export const api: Arg[] = [
     {
