@@ -14,6 +14,8 @@ host-suffix, tthr.apple.com, reject
 host, tether.edge.apple, reject
 
 #[rewrite_local]
+# WeatherKit.api.airQualityScale.request
+^https?:\/\/weatherkit\.apple\.com\/api\/v1\/airQualityScale\/ url script-request-header https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/request.bundle.js
 # 🌤 WeatherKit.api.availability.request
 ^https?:\/\/weatherkit\.apple\.com\/api\/v[123]\/availability\/ url script-request-header https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/request.bundle.js
 # 🌤 WeatherKit.api.weather.request

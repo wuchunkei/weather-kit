@@ -24,6 +24,10 @@ http:
   mitm:
     - "weatherkit.apple.com"
   script:
+    - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v1\/airQualityScale\/
+      name: WeatherKit.api.airQualityScale.request
+      type: request
+      argument:
     - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v[123]\/availability\/
       name: WeatherKit.api.availability.request
       type: request
@@ -45,6 +49,9 @@ http:
       argument:
 
 script-providers:
+  WeatherKit.api.airQualityScale.request:
+    url: https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/request.bundle.js
+    interval: 86400
   WeatherKit.api.availability.request:
     url: https://github.com/wuchunkei/weather-kit/releases/download/v{{@package 'version'}}/request.bundle.js
     interval: 86400

@@ -1,6 +1,7 @@
 import { Console, Lodash as _, Storage } from "@nsnanocat/util";
 import database from "../function/database.mjs";
 import setENV from "../function/setENV.mjs";
+import AirQualityScale from "../class/AirQualityScale.mjs";
 
 const ORIGINAL_COUNTRY_HEADER = "X-iRingo-Original-Country";
 const ORIGINAL_STOREFRONT_HEADER = "X-iRingo-Original-Store-Front";
@@ -146,6 +147,13 @@ export async function Request($request) {
                     switch (true) {
                         case /^\/api\/v[123]\/availability\//.test(url.pathname): {
                             ApplyAvailabilityVirtualCountry($request, url, Settings);
+                            break;
+                        }
+                        case /^\/api\/v1\/airQualityScale\//.test(url.pathname): {
+                            const pathParts = url.pathname.split("/").filter(Boolean);
+                            const language = pathParts[3] ?? "en-US";
+                            const scaleName = pathParts[4] ?? "";
+                            $response = AirQualityScale.Build(language, scaleName);
                             break;
                         }
                         case /^\/api\/v[23]\/weather\//.test(url.pathname): {

@@ -7,6 +7,10 @@
   * When the primary AQI source is available but lacks pollutant concentrations, the response can supplement pollutants from the fallback chain while keeping the primary AQI index.
   * Added IQAir and WAQI API settings to generated modules and BoxJs settings.
 
+### Bug Fixes
+  * Added a local `airQualityScale` request handler to prevent Apple Weather AQI scale requests from passing through to 404 responses in unsupported regions.
+  * Added `airQualityScale` request script rules to generated Loon, Quantumult X, Surge, and Stash modules.
+
 ## 3.1.6
 
 ### 🛠️ Bug Fixes
