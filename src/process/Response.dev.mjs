@@ -16,7 +16,7 @@ import setENV from "../function/setENV.mjs";
 
 const ORIGINAL_COUNTRY_HEADER = "X-iRingo-Original-Country";
 const ORIGINAL_STOREFRONT_HEADER = "X-iRingo-Original-Store-Front";
-const AIR_QUALITY_CACHE_KEY = "iRingo.WeatherKit.RuntimeCaches";
+const AIR_QUALITY_CACHE_KEY = "iRingo.WeatherKit.RuntimeCaches.v2";
 const AIR_QUALITY_CACHE_TTL = 10 * 60 * 1000;
 const AIR_QUALITY_FAILURE_CACHE_TTL = 60 * 1000;
 const AIR_QUALITY_PROVIDERS = ["WeatherKit", "IQAir", "QWeather", "WAQI"];
@@ -916,6 +916,7 @@ async function FetchAirQualityWithFallback(provider, fallbackProviders, envirome
     if (!pollutantAttempt && pollutantsProvider === "Auto") {
         for (const currentProvider of providers.filter(provider => AIR_QUALITY_POLLUTANT_CAPABLE_PROVIDERS.includes(provider) && !attempts.some(attempt => attempt.provider === provider))) {
             const airQuality = await FetchAirQualityProvider(currentProvider, enviroments, Settings);
+            Console.info("FetchAirQualityWithFallback", `${currentProvider} pollutant count: ${getValidPollutants(airQuality).length}`);
             if (hasAvailableProviderData(airQuality) && hasPollutants(airQuality)) {
                 pollutantAttempt = { provider: currentProvider, airQuality };
                 break;
@@ -925,6 +926,8 @@ async function FetchAirQualityWithFallback(provider, fallbackProviders, envirome
             pollutantAttempt = attempts.find(({ provider, airQuality }) => AIR_QUALITY_POLLUTANT_CAPABLE_PROVIDERS.includes(provider) && hasAvailableProviderData(airQuality) && hasPollutants(airQuality));
         }
     }
+
+    if (!pollutantAttempt) Console.warn("FetchAirQualityWithFallback", "No pollutant source available for current Auto configuration");
 
     if (pollutantAttempt && pollutantAttempt.provider !== indexAttempt.provider) {
         const pollutants = getValidPollutants(pollutantAttempt.airQuality);

@@ -1,0 +1,31 @@
+#!name =  iRingo: 🌤 WeatherKit
+#!desc = iOS 18 & macOS 15 & watchOS 11\n1. Unlock all Weather features\n2. Add AQI replacement with IQAir, QWeather, and WAQI fallback support\n3. Add next-hour precipitation data\n4. Add weather data replacement\n5. Fall back from OpenWeather to WeatherKit or QWeather when OpenWeather is unavailable\n\nOpen-source derivative notice: This project is a secondary creation and functional extension based on NSRingo/WeatherKit and related open-source work. It is intended for learning, research, and personal use only. WeatherKit, Apple, OpenWeather, QWeather, IQAir, WAQI, Hong Kong Observatory, and related data, trademarks, and services belong to their respective rights holders. Users should comply with applicable service terms and local laws.
+#!openUrl = http://boxjs.com/#/app/iRingo.WeatherKit
+#!author = VirgilClyne[https://github.com/VirgilClyne],WordlessEcho[https://github.com/WordlessEcho],001[https://github.com/001ProMax],wuchunkei[https://github.com/wuchunkei]
+#!homepage = https://github.com/wuchunkei/weather-kit
+#!icon = https://developer.apple.com/assets/elements/icons/weatherkit/weatherkit-128x128.png
+#!category =  iRingo
+#!date = 2026-06-22 08:40:25
+#!version = 3.1.7
+
+#[filter_local]
+host, weather-analytics-events.apple.com, reject
+host-suffix, tthr.apple.com, reject
+host, tether.edge.apple, reject
+
+#[rewrite_local]
+# WeatherKit.api.airQualityScale.request
+^https?:\/\/weatherkit\.apple\.com\/api\/v1\/airQualityScale\/ url script-request-header https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/request.bundle.js
+# 🌤 WeatherKit.api.availability.request
+^https?:\/\/weatherkit\.apple\.com\/api\/v[123]\/availability\/ url script-request-header https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/request.bundle.js
+# 🌤 WeatherKit.api.weather.request
+^https?:\/\/weatherkit\.apple\.com\/api\/v[23]\/weather\/ url script-request-header https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/request.bundle.js
+# 🌤 WeatherKit.api.availability.response
+^https?:\/\/weatherkit\.apple\.com\/api\/v[123]\/availability\/ url script-response-body https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/response.bundle.js
+# WeatherKit.api.severeWeatherNotificationChannels.response
+^https?:\/\/weatherkit\.apple\.com\/api\/v1\/severeWeatherNotificationChannels\/global$ url script-response-body https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/response.bundle.js
+# 🌤 WeatherKit.api.weather.response
+^https?:\/\/weatherkit\.apple\.com\/api\/v[23]\/weather\/ url script-response-body https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/response.bundle.js
+
+#[mitm]
+hostname = weatherkit.apple.com

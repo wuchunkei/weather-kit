@@ -47,11 +47,14 @@ export default class IQAir {
     }
 
     static #CreatePollutants(pollution, units) {
+        const { ugm3, mgm3, ppb, ppm } = AirQuality.Config.Units.WeatherKit;
         return Object.entries(IQAir.Pollutants)
             .map(([code, pollutantType]) => {
                 const amount = Number.parseFloat(pollution?.[code]?.conc);
                 const unit = IQAir.Units[units?.[code]];
                 if (!Number.isFinite(amount) || !unit) return;
+                if (unit === mgm3) return { amount: AirQuality.ConvertUnit(amount, mgm3, ugm3), pollutantType, units: ugm3 };
+                if (unit === ppm) return { amount: AirQuality.ConvertUnit(amount, ppm, ppb), pollutantType, units: ppb };
                 return { amount, pollutantType, units: unit };
             })
             .filter(Boolean);

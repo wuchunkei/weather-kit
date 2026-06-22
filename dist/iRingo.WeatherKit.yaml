@@ -1,0 +1,205 @@
+name: ' iRingo: 🌤 WeatherKit'
+description: |-
+  iOS 18 & macOS 15 & watchOS 11
+  1. Unlock all Weather features
+  2. Add AQI replacement with IQAir, QWeather, and WAQI fallback support
+  3. Add next-hour precipitation data
+  4. Add weather data replacement
+  5. Fall back from OpenWeather to WeatherKit or QWeather when OpenWeather is unavailable
+
+  Open-source derivative notice: This project is a secondary creation and functional extension based on NSRingo/WeatherKit and related open-source work. It is intended for learning, research, and personal use only. WeatherKit, Apple, OpenWeather, QWeather, IQAir, WAQI, Hong Kong Observatory, and related data, trademarks, and services belong to their respective rights holders. Users should comply with applicable service terms and local laws.
+compat_arguments:
+  Weather.Replace: OFF
+  Weather.Provider: WeatherKit
+  Weather.Fallback.Provider: WeatherKit
+  NextHour.Provider: WeatherKit
+  NextHour.Fallback.Provider: WeatherKit
+  AirQuality.Replace: CN
+  AirQuality.Provider: WeatherKit
+  AirQuality.Pollutants.Provider: Auto
+  AirQuality.Standard: Provider
+  AirQuality.RequestTimeout: '3000'
+  AirQuality.Fallback.Provider: QWeather,WAQI
+  API.OpenWeather.URL: https://api.openweathermap.org/data/4.0/onecall
+  API.OpenWeather.Token: ''
+  API.QWeather.Host: devapi.qweather.com
+  API.QWeather.Token: ''
+  API.IQAir.URL: https://api.airvisual.com/v2/nearest_city
+  API.IQAir.Token: ''
+  API.WAQI.Token: ''
+  Storage: Argument
+  LogLevel: WARN
+compat_arguments_desc: |
+  Weather.Replace: [Weather] Replacement Scope
+      ├ OFF: Disabled
+      ├ CN: Mainland China
+      ├ CN|HK|MO|TW: Mainland China, Hong Kong, Macau, and Taiwan
+      └ .*: All Regions
+  Replace weather data only for matching regions. Keep Disabled when you only need AQI replacement.
+
+  Weather.Provider: [Weather] Data Source
+      ├ WeatherKit: WeatherKit (No replacement)
+      ├ OpenWeather: OpenWeather
+      └ QWeather: QWeather
+  Use the selected provider to replace weather data.
+
+  Weather.Fallback.Provider: [Weather] OpenWeather Fallback
+      ├ WeatherKit: WeatherKit
+      └ QWeather: QWeather
+  Fallback provider used when OpenWeather weather data is unavailable or rate-limited.
+
+  NextHour.Provider: [Next-Hour Precipitation Intensity] Data Source
+      ├ WeatherKit: WeatherKit (Do not add)
+      ├ OpenWeather: OpenWeather
+      └ QWeather: QWeather
+  Use the selected provider to replace or fill next-hour precipitation intensity data.
+
+  NextHour.Fallback.Provider: [Next-Hour Precipitation Intensity] OpenWeather Fallback
+      ├ WeatherKit: WeatherKit
+      └ QWeather: QWeather
+  Fallback provider used when OpenWeather next-hour precipitation data is unavailable or rate-limited.
+
+  AirQuality.Replace: [Air Quality] Replacement Scope
+      ├ CN: Mainland China
+      ├ CN|HK|MO|TW: Mainland China, Hong Kong, Macau, and Taiwan
+      └ .*: All Regions
+  Replace air-quality data only for matching regions.
+
+  AirQuality.Provider: [Air Quality] Data Source
+      ├ WeatherKit: WeatherKit (No replacement)
+      ├ IQAir: IQAir
+      ├ QWeather: QWeather
+      └ WAQI: WAQI
+  Use the selected provider to replace AQI. IQAir results can be supplemented by the configured fallback providers when pollutant details are missing.
+
+  AirQuality.Pollutants.Provider: [Air Quality] Pollutants Source
+      ├ Auto: Auto
+      ├ IndexProvider: Same as AQI Source
+      ├ WeatherKit: WeatherKit
+      ├ IQAir: IQAir
+      ├ QWeather: QWeather
+      └ WAQI: WAQI
+  Choose where pollutant concentrations come from. Auto keeps the AQI source's own pollutants, preserves WeatherKit pollutants when available, and tries QWeather/IQAir when pollutant details are missing.
+
+  AirQuality.Standard: [Air Quality] AQI Standard
+      ├ Provider: Provider Default
+      ├ US: US AQI (EPA NowCast)
+      └ CN: China AQI (HJ 633-2012)
+  Choose the AQI standard used for display. Provider Default keeps the selected provider's own AQI; US or China recalculates AQI from pollutant concentrations when available.
+
+  AirQuality.RequestTimeout: [Air Quality] Request Timeout
+  Maximum wait time in milliseconds for each third-party AQI provider before falling back or keeping the original WeatherKit response. Use 3000 for normal use, or 5000 when QWeather/IQAir is slow.
+
+  AirQuality.Fallback.Provider: [Air Quality] Fallback Sources
+      ├ QWeather: QWeather
+      └ WAQI: WAQI
+  Fallback order used when the primary AQI provider is unavailable. Pollutant details are fetched from fallback providers only when a forced AQI standard needs them.
+
+  API.OpenWeather.URL: [API] OpenWeather Request URL
+  OpenWeather One Call API 4.0 request URL
+
+  API.OpenWeather.Token: [API] OpenWeather Token
+  OpenWeather API token
+
+  API.QWeather.Host: [API] QWeather Host
+  Hostname used by the QWeather API
+
+  API.QWeather.Token: [API] QWeather Token
+  QWeather API token
+
+  API.IQAir.URL: [API] IQAir Request URL
+  IQAir AirVisual API request URL
+
+  API.IQAir.Token: [API] IQAir Token
+  IQAir AirVisual API token
+
+  API.WAQI.Token: [API] WAQI Token
+  WAQI API token. Leave empty to let the script try the public nearest-station flow.
+
+  Storage: [Storage] Configuration Type
+      ├ Argument: Prefer configuration passed by $argument, such as plugin options and module arguments. Missing $argument values are provided by PersistentStore (BoxJs).
+      ├ PersistentStore: Only use configuration from $persistentStore, such as BoxJs.
+      └ database: Only use defaults from the author's database.mjs file. Other custom configuration will no longer take effect.
+  Choose the configuration source. For legacy setups without this option, the order remains $persistentStore (BoxJs) > $argument > database.
+
+  LogLevel: [Debug] Log Level
+      ├ OFF: Off
+      ├ ERROR: Error
+      ├ WARN: Warning
+      ├ INFO: Info
+      ├ DEBUG: Debug
+      └ ALL: All
+  Choose the script log level. Logs below the selected level will be suppressed.
+open_url: http://boxjs.com/#/app/iRingo.WeatherKit
+author: VirgilClyne[https://github.com/VirgilClyne],WordlessEcho[https://github.com/WordlessEcho],001[https://github.com/001ProMax],wuchunkei[https://github.com/wuchunkei]
+homepage: https://github.com/wuchunkei/weather-kit
+icon: https://developer.apple.com/assets/elements/icons/weatherkit/weatherkit-128x128.png
+dns: {}
+rules:
+- domain:
+    match: weather-analytics-events.apple.com
+    policy: REJECT-DROP
+- domain_suffix:
+    match: tthr.apple.com
+    policy: REJECT-DROP
+- domain:
+    match: tether.edge.apple
+    policy: REJECT-DROP
+- and:
+    match:
+    - or:
+        match:
+        - asn:
+            match: '714'
+            no_resolve: true
+        - asn:
+            match: '6185'
+            no_resolve: true
+    - protocol:
+        match: QUIC
+    policy: REJECT-DROP
+scriptings:
+- http_request:
+    name: WeatherKit.api.airQualityScale.request
+    match: ^https?:\/\/weatherkit\.apple\.com\/api\/v1\/airQualityScale\/
+    script_url: https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/request.bundle.js
+    env:
+      _compat.$argument: Weather.Replace="{{{Weather.Replace}}}"&Weather.Provider="{{{Weather.Provider}}}"&Weather.Fallback.Provider="{{{Weather.Fallback.Provider}}}"&NextHour.Provider="{{{NextHour.Provider}}}"&NextHour.Fallback.Provider="{{{NextHour.Fallback.Provider}}}"&AirQuality.Replace="{{{AirQuality.Replace}}}"&AirQuality.Provider="{{{AirQuality.Provider}}}"&AirQuality.Pollutants.Provider="{{{AirQuality.Pollutants.Provider}}}"&AirQuality.Standard="{{{AirQuality.Standard}}}"&AirQuality.RequestTimeout="{{{AirQuality.RequestTimeout}}}"&AirQuality.Fallback.Provider="{{{AirQuality.Fallback.Provider}}}"&API.OpenWeather.URL="{{{API.OpenWeather.URL}}}"&API.OpenWeather.Token="{{{API.OpenWeather.Token}}}"&API.QWeather.Host="{{{API.QWeather.Host}}}"&API.QWeather.Token="{{{API.QWeather.Token}}}"&API.IQAir.URL="{{{API.IQAir.URL}}}"&API.IQAir.Token="{{{API.IQAir.Token}}}"&API.WAQI.Token="{{{API.WAQI.Token}}}"&Storage="{{{Storage}}}"&LogLevel="{{{LogLevel}}}"
+- http_request:
+    name: 🌤 WeatherKit.api.availability.request
+    match: ^https?:\/\/weatherkit\.apple\.com\/api\/v[123]\/availability\/
+    script_url: https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/request.bundle.js
+    env:
+      _compat.$argument: Weather.Replace="{{{Weather.Replace}}}"&Weather.Provider="{{{Weather.Provider}}}"&Weather.Fallback.Provider="{{{Weather.Fallback.Provider}}}"&NextHour.Provider="{{{NextHour.Provider}}}"&NextHour.Fallback.Provider="{{{NextHour.Fallback.Provider}}}"&AirQuality.Replace="{{{AirQuality.Replace}}}"&AirQuality.Provider="{{{AirQuality.Provider}}}"&AirQuality.Pollutants.Provider="{{{AirQuality.Pollutants.Provider}}}"&AirQuality.Standard="{{{AirQuality.Standard}}}"&AirQuality.RequestTimeout="{{{AirQuality.RequestTimeout}}}"&AirQuality.Fallback.Provider="{{{AirQuality.Fallback.Provider}}}"&API.OpenWeather.URL="{{{API.OpenWeather.URL}}}"&API.OpenWeather.Token="{{{API.OpenWeather.Token}}}"&API.QWeather.Host="{{{API.QWeather.Host}}}"&API.QWeather.Token="{{{API.QWeather.Token}}}"&API.IQAir.URL="{{{API.IQAir.URL}}}"&API.IQAir.Token="{{{API.IQAir.Token}}}"&API.WAQI.Token="{{{API.WAQI.Token}}}"&Storage="{{{Storage}}}"&LogLevel="{{{LogLevel}}}"
+- http_request:
+    name: 🌤 WeatherKit.api.weather.request
+    match: ^https?:\/\/weatherkit\.apple\.com\/api\/v[23]\/weather\/
+    script_url: https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/request.bundle.js
+    env:
+      _compat.$argument: Weather.Replace="{{{Weather.Replace}}}"&Weather.Provider="{{{Weather.Provider}}}"&Weather.Fallback.Provider="{{{Weather.Fallback.Provider}}}"&NextHour.Provider="{{{NextHour.Provider}}}"&NextHour.Fallback.Provider="{{{NextHour.Fallback.Provider}}}"&AirQuality.Replace="{{{AirQuality.Replace}}}"&AirQuality.Provider="{{{AirQuality.Provider}}}"&AirQuality.Pollutants.Provider="{{{AirQuality.Pollutants.Provider}}}"&AirQuality.Standard="{{{AirQuality.Standard}}}"&AirQuality.RequestTimeout="{{{AirQuality.RequestTimeout}}}"&AirQuality.Fallback.Provider="{{{AirQuality.Fallback.Provider}}}"&API.OpenWeather.URL="{{{API.OpenWeather.URL}}}"&API.OpenWeather.Token="{{{API.OpenWeather.Token}}}"&API.QWeather.Host="{{{API.QWeather.Host}}}"&API.QWeather.Token="{{{API.QWeather.Token}}}"&API.IQAir.URL="{{{API.IQAir.URL}}}"&API.IQAir.Token="{{{API.IQAir.Token}}}"&API.WAQI.Token="{{{API.WAQI.Token}}}"&Storage="{{{Storage}}}"&LogLevel="{{{LogLevel}}}"
+- http_response:
+    name: 🌤 WeatherKit.api.availability.response
+    match: ^https?:\/\/weatherkit\.apple\.com\/api\/v[123]\/availability\/
+    script_url: https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/response.bundle.js
+    env:
+      _compat.$argument: Weather.Replace="{{{Weather.Replace}}}"&Weather.Provider="{{{Weather.Provider}}}"&Weather.Fallback.Provider="{{{Weather.Fallback.Provider}}}"&NextHour.Provider="{{{NextHour.Provider}}}"&NextHour.Fallback.Provider="{{{NextHour.Fallback.Provider}}}"&AirQuality.Replace="{{{AirQuality.Replace}}}"&AirQuality.Provider="{{{AirQuality.Provider}}}"&AirQuality.Pollutants.Provider="{{{AirQuality.Pollutants.Provider}}}"&AirQuality.Standard="{{{AirQuality.Standard}}}"&AirQuality.RequestTimeout="{{{AirQuality.RequestTimeout}}}"&AirQuality.Fallback.Provider="{{{AirQuality.Fallback.Provider}}}"&API.OpenWeather.URL="{{{API.OpenWeather.URL}}}"&API.OpenWeather.Token="{{{API.OpenWeather.Token}}}"&API.QWeather.Host="{{{API.QWeather.Host}}}"&API.QWeather.Token="{{{API.QWeather.Token}}}"&API.IQAir.URL="{{{API.IQAir.URL}}}"&API.IQAir.Token="{{{API.IQAir.Token}}}"&API.WAQI.Token="{{{API.WAQI.Token}}}"&Storage="{{{Storage}}}"&LogLevel="{{{LogLevel}}}"
+    body_required: true
+- http_response:
+    name: WeatherKit.api.severeWeatherNotificationChannels.response
+    match: ^https?:\/\/weatherkit\.apple\.com\/api\/v1\/severeWeatherNotificationChannels\/global$
+    script_url: https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/response.bundle.js
+    env:
+      _compat.$argument: Weather.Replace="{{{Weather.Replace}}}"&Weather.Provider="{{{Weather.Provider}}}"&Weather.Fallback.Provider="{{{Weather.Fallback.Provider}}}"&NextHour.Provider="{{{NextHour.Provider}}}"&NextHour.Fallback.Provider="{{{NextHour.Fallback.Provider}}}"&AirQuality.Replace="{{{AirQuality.Replace}}}"&AirQuality.Provider="{{{AirQuality.Provider}}}"&AirQuality.Pollutants.Provider="{{{AirQuality.Pollutants.Provider}}}"&AirQuality.Standard="{{{AirQuality.Standard}}}"&AirQuality.RequestTimeout="{{{AirQuality.RequestTimeout}}}"&AirQuality.Fallback.Provider="{{{AirQuality.Fallback.Provider}}}"&API.OpenWeather.URL="{{{API.OpenWeather.URL}}}"&API.OpenWeather.Token="{{{API.OpenWeather.Token}}}"&API.QWeather.Host="{{{API.QWeather.Host}}}"&API.QWeather.Token="{{{API.QWeather.Token}}}"&API.IQAir.URL="{{{API.IQAir.URL}}}"&API.IQAir.Token="{{{API.IQAir.Token}}}"&API.WAQI.Token="{{{API.WAQI.Token}}}"&Storage="{{{Storage}}}"&LogLevel="{{{LogLevel}}}"
+    body_required: true
+- http_response:
+    name: 🌤 WeatherKit.api.weather.response
+    match: ^https?:\/\/weatherkit\.apple\.com\/api\/v[23]\/weather\/
+    script_url: https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/response.bundle.js
+    env:
+      _compat.$argument: Weather.Replace="{{{Weather.Replace}}}"&Weather.Provider="{{{Weather.Provider}}}"&Weather.Fallback.Provider="{{{Weather.Fallback.Provider}}}"&NextHour.Provider="{{{NextHour.Provider}}}"&NextHour.Fallback.Provider="{{{NextHour.Fallback.Provider}}}"&AirQuality.Replace="{{{AirQuality.Replace}}}"&AirQuality.Provider="{{{AirQuality.Provider}}}"&AirQuality.Pollutants.Provider="{{{AirQuality.Pollutants.Provider}}}"&AirQuality.Standard="{{{AirQuality.Standard}}}"&AirQuality.RequestTimeout="{{{AirQuality.RequestTimeout}}}"&AirQuality.Fallback.Provider="{{{AirQuality.Fallback.Provider}}}"&API.OpenWeather.URL="{{{API.OpenWeather.URL}}}"&API.OpenWeather.Token="{{{API.OpenWeather.Token}}}"&API.QWeather.Host="{{{API.QWeather.Host}}}"&API.QWeather.Token="{{{API.QWeather.Token}}}"&API.IQAir.URL="{{{API.IQAir.URL}}}"&API.IQAir.Token="{{{API.IQAir.Token}}}"&API.WAQI.Token="{{{API.WAQI.Token}}}"&Storage="{{{Storage}}}"&LogLevel="{{{LogLevel}}}"
+    body_required: true
+    binary_body: true
+mitm:
+  hostnames:
+    includes:
+    - weatherkit.apple.com

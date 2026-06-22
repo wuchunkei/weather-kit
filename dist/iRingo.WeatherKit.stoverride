@@ -1,0 +1,80 @@
+name: " iRingo: 🌤 WeatherKit"
+desc: |-
+  iOS 18 & macOS 15 & watchOS 11
+  1. Unlock all Weather features
+  2. Add AQI replacement with IQAir, QWeather, and WAQI fallback support
+  3. Add next-hour precipitation data
+  4. Add weather data replacement
+  5. Fall back from OpenWeather to WeatherKit or QWeather when OpenWeather is unavailable
+  
+  Open-source derivative notice: This project is a secondary creation and functional extension based on NSRingo/WeatherKit and related open-source work. It is intended for learning, research, and personal use only. WeatherKit, Apple, OpenWeather, QWeather, IQAir, WAQI, Hong Kong Observatory, and related data, trademarks, and services belong to their respective rights holders. Users should comply with applicable service terms and local laws.
+openUrl: "http://boxjs.com/#/app/iRingo.WeatherKit"
+author: |-
+  VirgilClyne[https://github.com/VirgilClyne]
+  WordlessEcho[https://github.com/WordlessEcho]
+  001[https://github.com/001ProMax]
+  wuchunkei[https://github.com/wuchunkei]
+homepage: "https://github.com/wuchunkei/weather-kit"
+icon: "https://developer.apple.com/assets/elements/icons/weatherkit/weatherkit-128x128.png"
+category: " iRingo"
+date: "2026-06-22 08:40:25"
+version: "3.1.7"
+
+rules:
+  - DOMAIN,weather-analytics-events.apple.com,REJECT-DROP
+  - DOMAIN-SUFFIX,tthr.apple.com,REJECT-DROP
+  - DOMAIN,tether.edge.apple,REJECT-DROP
+  - AND,((OR,((IP-ASN,714,no-resolve),(IP-ASN,6185,no-resolve))),(PROTOCOL,QUIC)),REJECT-DROP
+
+http:
+  mitm:
+    - "weatherkit.apple.com"
+  script:
+    - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v1\/airQualityScale\/
+      name: WeatherKit.api.airQualityScale.request
+      type: request
+      argument:
+    - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v[123]\/availability\/
+      name: WeatherKit.api.availability.request
+      type: request
+      argument:
+    - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v[23]\/weather\/
+      name: WeatherKit.api.weather.request
+      type: request
+      argument:
+    - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v[123]\/availability\/
+      name: WeatherKit.api.availability.response
+      type: response
+      require-body: true
+      argument:
+    - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v1\/severeWeatherNotificationChannels\/global$
+      name: WeatherKit.api.severeWeatherNotificationChannels.response
+      type: response
+      require-body: true
+      argument:
+    - match: ^https?:\/\/weatherkit\.apple\.com\/api\/v[23]\/weather\/
+      name: WeatherKit.api.weather.response
+      type: response
+      require-body: true
+      binary-mode: true
+      argument:
+
+script-providers:
+  WeatherKit.api.airQualityScale.request:
+    url: https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/request.bundle.js
+    interval: 86400
+  WeatherKit.api.availability.request:
+    url: https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/request.bundle.js
+    interval: 86400
+  WeatherKit.api.weather.request:
+    url: https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/request.bundle.js
+    interval: 86400
+  WeatherKit.api.availability.response:
+    url: https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/response.bundle.js
+    interval: 86400
+  WeatherKit.api.severeWeatherNotificationChannels.response:
+    url: https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/response.bundle.js
+    interval: 86400
+  WeatherKit.api.weather.response:
+    url: https://github.com/wuchunkei/weather-kit/releases/download/v3.1.7/response.bundle.js
+    interval: 86400

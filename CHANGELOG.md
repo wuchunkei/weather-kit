@@ -19,6 +19,7 @@
   * Added short-lived AQI provider caching, an optional pollutant-source selector, pollutant unit guards, and stricter next-hour fallback validation.
   * Fixed empty AQI health recommendations and preserved or supplemented pollutant details when third-party AQI sources return only an index.
   * Busted stale Weather app AQI scale caches, disabled local AQI scale caching, and raised the default third-party AQI timeout to 3000 ms for more reliable QWeather pollutant fallback.
+  * Improved Auto pollutant fallback by widening QWeather pollutant code/unit parsing, falling back to QWeather v7 air data when the v1 air-quality API has no usable pollutants, and resetting the runtime AQI cache key.
 
 ## 3.1.6
 

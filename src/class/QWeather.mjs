@@ -31,6 +31,8 @@ export default class QWeather {
             o3: "OZONE",
             nox: "NOX",
             pm25: "PM2_5",
+            pm2_5: "PM2_5",
+            "pm2.5": "PM2_5",
             pm2p5: "PM2_5",
             pm10: "PM10",
             other: "NOT_AVAILABLE",
@@ -39,10 +41,16 @@ export default class QWeather {
             null: "NOT_AVAILABLE",
         },
         Units: {
+            ugm3: "MICROGRAMS_PER_CUBIC_METER",
             "ug/m3": "MICROGRAMS_PER_CUBIC_METER",
+            "ug/m^3": "MICROGRAMS_PER_CUBIC_METER",
             "\u00b5g/m3": "MICROGRAMS_PER_CUBIC_METER",
+            "\u00b5g/m^3": "MICROGRAMS_PER_CUBIC_METER",
             "\u03bcg/m3": "MICROGRAMS_PER_CUBIC_METER",
+            "\u03bcg/m^3": "MICROGRAMS_PER_CUBIC_METER",
+            mgm3: "MILLIGRAMS_PER_CUBIC_METER",
             "mg/m3": "MILLIGRAMS_PER_CUBIC_METER",
+            "mg/m^3": "MILLIGRAMS_PER_CUBIC_METER",
             ppb: "PARTS_PER_BILLION",
             ppm: "PARTS_PER_MILLION",
         },
@@ -312,6 +320,26 @@ export default class QWeather {
             Console.info("✅ AirQualityCurrent");
         }
         return {};
+    }
+
+    #NormalizePollutantCode(code) {
+        return `${code ?? ""}`
+            .trim()
+            .toLowerCase()
+            .replace(/[-_\s]/g, "")
+            .replace(".", "");
+    }
+
+    #PollutantType(code) {
+        return this.#Config.Pollutants[code] ?? this.#Config.Pollutants[this.#NormalizePollutantCode(code)];
+    }
+
+    #NormalizeUnit(unit) {
+        return `${unit ?? ""}`.trim().toLowerCase().replaceAll("\u03bc", "u").replaceAll("\u00b5", "u").replaceAll("\u00ce\u00bc", "u").replaceAll("\u00c2\u00b5", "u").replaceAll("\u00b3", "3").replaceAll("\u00c2\u00b3", "3").replaceAll(" ", "").replace("/m^3", "/m3");
+    }
+
+    #WeatherKitUnit(unit) {
+        return this.#Config.Units[unit] ?? this.#Config.Units[this.#NormalizeUnit(unit)];
     }
 
     async Minutely() {
@@ -682,30 +710,29 @@ export default class QWeather {
 
         // TODO: what is ppmC? https://dev.qweather.com/docs/resource/air-info/#pollutants
         const pollutants = (Array.isArray(pollutantsObj) ? pollutantsObj : [])
-            .filter(pollutant => pollutant?.concentration && pollutant.concentration.unit !== "ppmC")
+            .filter(pollutant => pollutant?.concentration && this.#NormalizeUnit(pollutant.concentration.unit) !== "ppmc")
             .map(({ code, concentration, subIndexes = [] }) => {
                 const { value, unit } = concentration;
-                const pollutantType = this.#Config.Pollutants[code];
+                const pollutantType = this.#PollutantType(code);
                 if (!pollutantType || pollutantType === "NOT_AVAILABLE") return undefined;
                 if (!Number.isFinite(Number(value))) return undefined;
                 const indexObj = subIndexes.find(subIndex => subIndex.code === scaleCode);
                 if (scaleCode && !indexObj) Console.warn("CreatePollutants", `No index for ${pollutantType} was found for required scale`);
 
-                const friendlyUnits = AirQuality.Config.Units.Friendly;
                 const { ugm3, mgm3, ppb, ppm } = AirQuality.Config.Units.WeatherKit;
-                switch (unit) {
-                    case friendlyUnits.MILLIGRAMS_PER_CUBIC_METER:
+                switch (this.#WeatherKitUnit(unit)) {
+                    case mgm3:
                         return { pollutantType, amount: AirQuality.ConvertUnit(value, mgm3, ugm3), units: ugm3, index: scaleCode ? (indexObj?.aqi ?? -1) : undefined };
-                    case friendlyUnits.PARTS_PER_MILLION:
+                    case ppm:
                         return { pollutantType, amount: AirQuality.ConvertUnit(value, ppm, ppb), units: ppb, index: scaleCode ? (indexObj?.aqi ?? -1) : undefined };
                     default:
-                        if (!this.#Config.Units[unit]) return undefined;
-                        return { pollutantType, amount: Number(value), units: this.#Config.Units[unit], index: scaleCode ? (indexObj?.aqi ?? -1) : undefined };
+                        if (!this.#WeatherKitUnit(unit)) return undefined;
+                        return { pollutantType, amount: Number(value), units: this.#WeatherKitUnit(unit), index: scaleCode ? (indexObj?.aqi ?? -1) : undefined };
                 }
             })
             .filter(Boolean);
 
-        Console.info("✅ CreatePollutants");
+        Console.info("✅ CreatePollutants", `count: ${pollutants.length}`);
         return pollutants;
     }
 
@@ -723,12 +750,13 @@ export default class QWeather {
         const pollutants = Object.entries(pollutantsObj ?? {})
             .map(([name, amount]) => {
                 const parsedAmount = Number.parseFloat(amount);
-                if (!Number.isFinite(parsedAmount) || !this.#Config.Pollutants[name]) return null;
-                switch (name) {
+                const pollutantType = this.#PollutantType(name);
+                if (!Number.isFinite(parsedAmount) || !pollutantType || pollutantType === "NOT_AVAILABLE") return null;
+                switch (this.#NormalizePollutantCode(name)) {
                     case "co":
                         return {
                             amount: AirQuality.ConvertUnit(parsedAmount, mgm3, ugm3),
-                            pollutantType: this.#Config.Pollutants[name],
+                            pollutantType,
                             units: ugm3,
                         };
                     case "no":
@@ -740,7 +768,7 @@ export default class QWeather {
                     case "pm10":
                         return {
                             amount: parsedAmount,
-                            pollutantType: this.#Config.Pollutants[name],
+                            pollutantType,
                             units: ugm3,
                         };
                     default:
@@ -749,7 +777,7 @@ export default class QWeather {
             })
             .filter(Boolean);
 
-        Console.info("✅ CreatePollutantsV7");
+        Console.info("✅ CreatePollutantsV7", `count: ${pollutants.length}`);
         return pollutants;
     }
 
@@ -828,6 +856,16 @@ export default class QWeather {
             pollutants: this.#CreatePollutants(airQualityCurrent.pollutants, supportedIndex?.code),
             previousDayComparison: AirQuality.Config.CompareCategoryIndexes.UNKNOWN,
         };
+
+        if (particularAirQuality.pollutants.length === 0) {
+            Console.warn("CurrentAirQuality", "QWeather airquality/v1 returned no usable pollutants, trying v7/air/now");
+            const legacyAirQuality = await this.AirNow();
+            if (legacyAirQuality?.pollutants?.length) {
+                Console.info("CurrentAirQuality", `Use pollutants from QWeather v7/air/now, count: ${legacyAirQuality.pollutants.length}`);
+                particularAirQuality.metadata.providerName = [particularAirQuality.metadata.providerName, "Pollutants: QWeather v7/air/now"].filter(Boolean).join("\n");
+                particularAirQuality.pollutants = legacyAirQuality.pollutants;
+            }
+        }
 
         if (!supportedIndex?.code || !scale?.categories) {
             Console.error("AirQuality", "No supported index found", `airQualityCurrent.indexes[].code = ${JSON.stringify(airQualityCurrent.indexes?.map(({ code }) => code))}`);
