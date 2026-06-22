@@ -94,7 +94,37 @@ const SCALE_DEFINITIONS = {
     },
 };
 
-for (const definition of Object.values(SCALE_DEFINITIONS)) {
+const HEALTH_RECOMMENDATIONS = {
+    EPA_NowCast: [
+        { "en-US": "Air quality is satisfactory. Enjoy normal outdoor activities." },
+        { "en-US": "Air quality is acceptable. Unusually sensitive people should consider reducing prolonged or heavy outdoor exertion." },
+        { "en-US": "Members of sensitive groups may be affected. Reduce prolonged or heavy outdoor exertion." },
+        { "en-US": "Everyone may begin to experience effects. Sensitive groups should avoid prolonged or heavy outdoor exertion." },
+        { "en-US": "Health risk is increased. Limit outdoor activity; sensitive groups should stay indoors where possible." },
+        { "en-US": "Health alert. Avoid outdoor activity and keep windows closed or use air filtration where possible." },
+    ],
+    HJ6332012: [
+        { "en-US": "Air quality is excellent. Normal outdoor activity is suitable for everyone." },
+        { "en-US": "Air quality is good. A few unusually sensitive people may consider reducing outdoor activity." },
+        { "en-US": "Sensitive groups should reduce prolonged or heavy outdoor exertion." },
+        { "en-US": "Children, older adults, and people with heart or lung disease should avoid prolonged outdoor activity; everyone else should reduce outdoor exertion." },
+        { "en-US": "Children, older adults, and people with heart or lung disease should stay indoors; everyone else should reduce outdoor activity." },
+        { "en-US": "Everyone should avoid outdoor activity. Sensitive groups should stay indoors and minimize physical exertion." },
+    ],
+    EU_EAQI: [
+        { "en-US": "Air quality is good. Enjoy normal outdoor activities." },
+        { "en-US": "Air quality is fair. Sensitive people may consider reducing prolonged outdoor exertion." },
+        { "en-US": "Sensitive people should reduce prolonged or heavy outdoor exertion." },
+        { "en-US": "Reduce outdoor exertion. Sensitive people should avoid prolonged outdoor activity." },
+        { "en-US": "Avoid outdoor exertion. Sensitive people should stay indoors where possible." },
+    ],
+};
+
+for (const [name, definition] of Object.entries(SCALE_DEFINITIONS)) {
+    definition.categories = definition.categories.map((category, index) => ({
+        ...category,
+        recommendation: category.recommendation ?? HEALTH_RECOMMENDATIONS[name]?.[index] ?? HEALTH_RECOMMENDATIONS.EPA_NowCast[index],
+    }));
     definition.gradient ??= { stops: definition.categories.map(category => ({ location: category.range[0], color: category.color })) };
 }
 

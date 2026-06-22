@@ -17,6 +17,7 @@
   * Reduced AQI loading time by avoiding extra pollutant fallback requests when Provider Default AQI is selected, and by using the one-request WAQI nearest-station flow when no WAQI token is configured.
   * Added a temporary response logger for WeatherKit severe weather notification channel JSON to diagnose next-hour precipitation notification support.
   * Added short-lived AQI provider caching, an optional pollutant-source selector, pollutant unit guards, and stricter next-hour fallback validation.
+  * Fixed empty AQI health recommendations and preserved or supplemented pollutant details when third-party AQI sources return only an index.
 
 ## 3.1.6
 
