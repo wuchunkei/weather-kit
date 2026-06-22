@@ -18,6 +18,7 @@
   * Added a temporary response logger for WeatherKit severe weather notification channel JSON to diagnose next-hour precipitation notification support.
   * Added short-lived AQI provider caching, an optional pollutant-source selector, pollutant unit guards, and stricter next-hour fallback validation.
   * Fixed empty AQI health recommendations and preserved or supplemented pollutant details when third-party AQI sources return only an index.
+  * Busted stale Weather app AQI scale caches, disabled local AQI scale caching, and raised the default third-party AQI timeout to 3000 ms for more reliable QWeather pollutant fallback.
 
 ## 3.1.6
 

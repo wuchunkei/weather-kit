@@ -21,6 +21,7 @@ const AIR_QUALITY_FAILURE_CACHE_TTL = 60 * 1000;
 const AIR_QUALITY_PROVIDERS = ["WeatherKit", "IQAir", "QWeather", "WAQI"];
 const AIR_QUALITY_POLLUTANTS_PROVIDERS = ["Auto", "IndexProvider", ...AIR_QUALITY_PROVIDERS];
 const AIR_QUALITY_POLLUTANT_CAPABLE_PROVIDERS = ["IQAir", "QWeather"];
+const AIR_QUALITY_SCALE_CACHE_BUSTER_VERSION = "3171";
 
 function getHeader(headers, name) {
     const lowerName = name.toLowerCase();
@@ -490,7 +491,7 @@ async function InjectAirQuality(airQuality, Settings, enviroments) {
     const provider = getAirQualityProvider(Settings);
     if (provider === "WeatherKit") {
         Console.info("✅ InjectAirQuality");
-        return ApplyAirQualityStandard(AirQuality.FixPollutantsUnits(airQuality), Settings);
+        return refreshAirQualityScaleVersion(ApplyAirQualityStandard(AirQuality.FixPollutantsUnits(airQuality), Settings));
     }
 
     const originalAirQuality = normalizeAirQualityData(AirQuality.FixPollutantsUnits(airQuality));
@@ -498,7 +499,7 @@ async function InjectAirQuality(airQuality, Settings, enviroments) {
     if (!hasAvailableProviderData(injectedAirQuality)) {
         Console.warn("InjectAirQuality", "All configured air-quality providers are unavailable");
         Console.info("✅ InjectAirQuality");
-        return originalAirQuality;
+        return refreshAirQualityScaleVersion(originalAirQuality);
     }
 
     const { providerLogo: _providerLogo, ...metadata } = {
@@ -516,7 +517,7 @@ async function InjectAirQuality(airQuality, Settings, enviroments) {
 
     Console.debug(`airQuality: ${JSON.stringify(patchedAirQuality, null, 2)}`);
     Console.info("✅ InjectAirQuality");
-    return patchedAirQuality;
+    return refreshAirQualityScaleVersion(patchedAirQuality);
 }
 
 function isWeatherReplaceEnabled(Settings, country) {
@@ -577,6 +578,12 @@ function hasPollutants(data) {
     return getValidPollutants(data).length > 0;
 }
 
+function refreshAirQualityScaleVersion(airQuality) {
+    const scaleName = `${airQuality?.scale ?? ""}`.split(".")[0];
+    if (!["EPA_NowCast", "HJ6332012", "EU_EAQI"].includes(scaleName)) return airQuality;
+    return { ...airQuality, scale: `${scaleName}.${AIR_QUALITY_SCALE_CACHE_BUSTER_VERSION}` };
+}
+
 function withFallbackPollutants(airQuality, fallbackAirQuality, enabled = true) {
     if (!enabled || !airQuality || hasPollutants(airQuality) || !hasPollutants(fallbackAirQuality)) return airQuality;
 
@@ -609,8 +616,8 @@ function getAirQualityStandard(Settings) {
 }
 
 function getAirQualityRequestTimeout(Settings) {
-    const timeout = Number.parseInt(Settings?.AirQuality?.RequestTimeout ?? 1500, 10);
-    if (!Number.isFinite(timeout) || timeout <= 0) return 1500;
+    const timeout = Number.parseInt(Settings?.AirQuality?.RequestTimeout ?? 3000, 10);
+    if (!Number.isFinite(timeout) || timeout <= 0) return 3000;
     return Math.min(Math.max(timeout, 500), 5000);
 }
 

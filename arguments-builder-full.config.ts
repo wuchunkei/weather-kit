@@ -159,7 +159,7 @@ const airQualityPollutantsProvider: Arg = {
         { key: "QWeather", label: "QWeather" },
         { key: "WAQI", label: "WAQI" },
     ],
-    description: "Choose where pollutant concentrations come from. Auto avoids extra requests for Provider Default AQI, and fetches fallback pollutants only when US or China AQI recalculation needs them.",
+    description: "Choose where pollutant concentrations come from. Auto keeps the AQI source's own pollutants, preserves WeatherKit pollutants when available, and tries QWeather/IQAir when pollutant details are missing.",
 };
 
 const airQualityStandard: Arg = {
@@ -178,11 +178,11 @@ const airQualityStandard: Arg = {
 const airQualityRequestTimeout: Arg = {
     key: "AirQuality.RequestTimeout",
     name: "[Air Quality] Request Timeout",
-    defaultValue: 1500,
+    defaultValue: 3000,
     type: "number",
     boxJsType: "number",
-    placeholder: "1500",
-    description: "Maximum wait time in milliseconds for each third-party AQI provider before falling back or keeping the original WeatherKit response.",
+    placeholder: "3000",
+    description: "Maximum wait time in milliseconds for each third-party AQI provider before falling back or keeping the original WeatherKit response. Use 3000 for normal use, or 5000 when QWeather/IQAir is slow.",
 };
 
 const airQualityFallbackProvider: Arg = {
